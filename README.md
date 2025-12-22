@@ -15,8 +15,11 @@ git clone https://github.com/yourusername/skill-tracker.git
 # Navigate to the project directory
 cd skill-tracker
 
-# Install dependencies (if applicable)
-npm install
+# Install dependencies
+pip install -r requirements.txt
+
+# For development dependencies
+pip install -r requirements-dev.txt
 ```
 
 ## Usage
