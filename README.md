@@ -20,6 +20,8 @@ pip install -r requirements.txt
 
 # For development dependencies
 pip install -r requirements-dev.txt
+# Please ensure you have Python and pip installed on your system.
+
 ```
 
 ## Usage
