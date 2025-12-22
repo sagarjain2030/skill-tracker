@@ -26,7 +26,7 @@ pip install -r requirements-dev.txt
 
 ## Usage
 
-Instructions for using the skill tracker will be added here.
+Instructions for using the skill tracker will be added here.It will be updated soon.
 
 ## Contributing
 
