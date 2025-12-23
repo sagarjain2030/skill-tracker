@@ -2,7 +2,7 @@
 from typing import Dict, List
 from fastapi import APIRouter, HTTPException, status
 from app.models.skill import Skill, SkillCreate, SkillUpdate
-from app.utils.validation import validate_no_cycle, CyclicDependencyError
+from app.utils.validation import validate_no_cycle, get_descendants, CyclicDependencyError
 
 router = APIRouter(prefix="/skills", tags=["Skills"])
 
@@ -247,3 +247,46 @@ def update_skill(skill_id: int, skill_data: SkillUpdate) -> Skill:
     
     skills_db[skill_id] = updated_skill
     return updated_skill
+
+
+@router.delete("/{skill_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_skill(skill_id: int) -> None:
+    """
+    Delete a skill and all its descendants (entire subtree).
+    
+    This operation cascades - deleting a skill will also delete all its children,
+    grandchildren, and so on. This ensures referential integrity is maintained.
+    
+    Args:
+        skill_id: The ID of the skill to delete
+        
+    Returns:
+        None (204 No Content on success)
+        
+    Raises:
+        HTTPException 404: If skill not found
+        
+    Examples:
+        Given hierarchy: A -> B -> C, D
+        - Deleting C removes only C
+        - Deleting B removes B, C, and D
+        - Deleting A removes A, B, C, and D
+    """
+    # Check skill exists
+    if skill_id not in skills_db:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Skill with id {skill_id} not found"
+        )
+    
+    # Get all descendants to delete
+    skill_parent_map = {sid: s.parent_id for sid, s in skills_db.items()}
+    descendants = get_descendants(skill_id, skill_parent_map)
+    
+    # Delete the skill and all descendants
+    skills_to_delete = {skill_id} | descendants
+    for sid in skills_to_delete:
+        del skills_db[sid]
+    
+    # Return None for 204 No Content
+    return None

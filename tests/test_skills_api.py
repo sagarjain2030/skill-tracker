@@ -641,3 +641,217 @@ class TestUpdateSkill:
         )
         
         assert response.status_code == 422  # Validation error
+
+
+class TestDeleteSkill:
+    """Tests for DELETE /skills/{skill_id} endpoint - deleting skills and subtrees."""
+
+    def test_delete_leaf_skill(self):
+        """Test deleting a skill with no children."""
+        # Create a skill
+        create_response = client.post("/skills/", json={"name": "Python"})
+        skill_id = create_response.json()["id"]
+        
+        # Delete it
+        response = client.delete(f"/skills/{skill_id}")
+        
+        assert response.status_code == 204
+        
+        # Verify it's deleted
+        get_response = client.get(f"/skills/{skill_id}")
+        assert get_response.status_code == 404
+
+    def test_delete_skill_with_one_child(self):
+        """Test deleting a skill deletes its child too."""
+        # Create parent -> child
+        parent_response = client.post("/skills/", json={"name": "Programming"})
+        parent_id = parent_response.json()["id"]
+        
+        child_response = client.post(
+            f"/skills/{parent_id}/children",
+            json={"name": "Python"}
+        )
+        child_id = child_response.json()["id"]
+        
+        # Delete parent
+        response = client.delete(f"/skills/{parent_id}")
+        
+        assert response.status_code == 204
+        
+        # Verify both are deleted
+        assert client.get(f"/skills/{parent_id}").status_code == 404
+        assert client.get(f"/skills/{child_id}").status_code == 404
+
+    def test_delete_skill_with_multiple_children(self):
+        """Test deleting a skill with multiple children deletes all."""
+        # Create parent with 3 children
+        parent_response = client.post("/skills/", json={"name": "Programming"})
+        parent_id = parent_response.json()["id"]
+        
+        child1_response = client.post(f"/skills/{parent_id}/children", json={"name": "Python"})
+        child1_id = child1_response.json()["id"]
+        
+        child2_response = client.post(f"/skills/{parent_id}/children", json={"name": "Java"})
+        child2_id = child2_response.json()["id"]
+        
+        child3_response = client.post(f"/skills/{parent_id}/children", json={"name": "JavaScript"})
+        child3_id = child3_response.json()["id"]
+        
+        # Delete parent
+        response = client.delete(f"/skills/{parent_id}")
+        
+        assert response.status_code == 204
+        
+        # Verify all are deleted
+        assert client.get(f"/skills/{parent_id}").status_code == 404
+        assert client.get(f"/skills/{child1_id}").status_code == 404
+        assert client.get(f"/skills/{child2_id}").status_code == 404
+        assert client.get(f"/skills/{child3_id}").status_code == 404
+
+    def test_delete_deep_hierarchy(self):
+        """Test deleting a skill deletes entire deep subtree."""
+        # Create A -> B -> C -> D
+        a_response = client.post("/skills/", json={"name": "A"})
+        a_id = a_response.json()["id"]
+        
+        b_response = client.post(f"/skills/{a_id}/children", json={"name": "B"})
+        b_id = b_response.json()["id"]
+        
+        c_response = client.post(f"/skills/{b_id}/children", json={"name": "C"})
+        c_id = c_response.json()["id"]
+        
+        d_response = client.post(f"/skills/{c_id}/children", json={"name": "D"})
+        d_id = d_response.json()["id"]
+        
+        # Delete A (should delete entire tree)
+        response = client.delete(f"/skills/{a_id}")
+        
+        assert response.status_code == 204
+        
+        # Verify all are deleted
+        assert client.get(f"/skills/{a_id}").status_code == 404
+        assert client.get(f"/skills/{b_id}").status_code == 404
+        assert client.get(f"/skills/{c_id}").status_code == 404
+        assert client.get(f"/skills/{d_id}").status_code == 404
+
+    def test_delete_middle_node(self):
+        """Test deleting a middle node deletes its subtree but not parent."""
+        # Create Root -> A -> B
+        root_response = client.post("/skills/", json={"name": "Root"})
+        root_id = root_response.json()["id"]
+        
+        a_response = client.post(f"/skills/{root_id}/children", json={"name": "A"})
+        a_id = a_response.json()["id"]
+        
+        b_response = client.post(f"/skills/{a_id}/children", json={"name": "B"})
+        b_id = b_response.json()["id"]
+        
+        # Delete A (should delete A and B, but not Root)
+        response = client.delete(f"/skills/{a_id}")
+        
+        assert response.status_code == 204
+        
+        # Root should still exist
+        root_check = client.get(f"/skills/{root_id}")
+        assert root_check.status_code == 200
+        
+        # A and B should be deleted
+        assert client.get(f"/skills/{a_id}").status_code == 404
+        assert client.get(f"/skills/{b_id}").status_code == 404
+
+    def test_delete_complex_tree(self):
+        """Test deleting from complex tree with multiple branches."""
+        # Create:  Root
+        #         /    \
+        #        A      B
+        #       / \      \
+        #      C   D      E
+        root_response = client.post("/skills/", json={"name": "Root"})
+        root_id = root_response.json()["id"]
+        
+        a_response = client.post(f"/skills/{root_id}/children", json={"name": "A"})
+        a_id = a_response.json()["id"]
+        
+        b_response = client.post(f"/skills/{root_id}/children", json={"name": "B"})
+        b_id = b_response.json()["id"]
+        
+        c_response = client.post(f"/skills/{a_id}/children", json={"name": "C"})
+        c_id = c_response.json()["id"]
+        
+        d_response = client.post(f"/skills/{a_id}/children", json={"name": "D"})
+        d_id = d_response.json()["id"]
+        
+        e_response = client.post(f"/skills/{b_id}/children", json={"name": "E"})
+        e_id = e_response.json()["id"]
+        
+        # Delete A (should delete A, C, D but keep Root, B, E)
+        response = client.delete(f"/skills/{a_id}")
+        
+        assert response.status_code == 204
+        
+        # Root, B, E should still exist
+        assert client.get(f"/skills/{root_id}").status_code == 200
+        assert client.get(f"/skills/{b_id}").status_code == 200
+        assert client.get(f"/skills/{e_id}").status_code == 200
+        
+        # A, C, D should be deleted
+        assert client.get(f"/skills/{a_id}").status_code == 404
+        assert client.get(f"/skills/{c_id}").status_code == 404
+        assert client.get(f"/skills/{d_id}").status_code == 404
+
+    def test_delete_skill_not_found(self):
+        """Test deleting non-existent skill."""
+        response = client.delete("/skills/999")
+        
+        assert response.status_code == 404
+        assert "Skill with id 999 not found" in response.json()["detail"]
+
+    def test_delete_all_skills_independently(self):
+        """Test deleting all skills one by one."""
+        # Create 3 independent root skills
+        skill1_response = client.post("/skills/", json={"name": "Skill1"})
+        skill1_id = skill1_response.json()["id"]
+        
+        skill2_response = client.post("/skills/", json={"name": "Skill2"})
+        skill2_id = skill2_response.json()["id"]
+        
+        skill3_response = client.post("/skills/", json={"name": "Skill3"})
+        skill3_id = skill3_response.json()["id"]
+        
+        # Delete each one
+        assert client.delete(f"/skills/{skill1_id}").status_code == 204
+        assert client.delete(f"/skills/{skill2_id}").status_code == 204
+        assert client.delete(f"/skills/{skill3_id}").status_code == 204
+        
+        # List should be empty
+        list_response = client.get("/skills/")
+        assert list_response.status_code == 200
+        assert list_response.json() == []
+
+    def test_delete_preserves_siblings(self):
+        """Test that deleting one skill doesn't affect its siblings."""
+        # Create parent with 3 children
+        parent_response = client.post("/skills/", json={"name": "Parent"})
+        parent_id = parent_response.json()["id"]
+        
+        child1_response = client.post(f"/skills/{parent_id}/children", json={"name": "Child1"})
+        child1_id = child1_response.json()["id"]
+        
+        child2_response = client.post(f"/skills/{parent_id}/children", json={"name": "Child2"})
+        child2_id = child2_response.json()["id"]
+        
+        child3_response = client.post(f"/skills/{parent_id}/children", json={"name": "Child3"})
+        child3_id = child3_response.json()["id"]
+        
+        # Delete middle child
+        response = client.delete(f"/skills/{child2_id}")
+        
+        assert response.status_code == 204
+        
+        # Parent and other children should still exist
+        assert client.get(f"/skills/{parent_id}").status_code == 200
+        assert client.get(f"/skills/{child1_id}").status_code == 200
+        assert client.get(f"/skills/{child3_id}").status_code == 200
+        
+        # Only child2 should be deleted
+        assert client.get(f"/skills/{child2_id}").status_code == 404
