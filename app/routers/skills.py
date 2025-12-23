@@ -1,5 +1,5 @@
 """Skills API router."""
-from typing import Dict, List, Optional
+from typing import Dict, List
 from fastapi import APIRouter, HTTPException, status
 from app.models.skill import Skill, SkillCreate
 
