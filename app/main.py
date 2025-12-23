@@ -1,8 +1,10 @@
 # app/main.py
 from fastapi import FastAPI, Response
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import os
+from pathlib import Path
 from app.routers import skills
 
 app = FastAPI(
@@ -52,13 +54,20 @@ app.add_middleware(
 # Include routers
 app.include_router(skills.router, prefix="/api")
 
+# Mount static files for React frontend (if build directory exists)
+frontend_build_path = Path(__file__).parent.parent / "frontend" / "build"
+if frontend_build_path.exists():
+    app.mount("/static", StaticFiles(directory=str(frontend_build_path / "static")), name="static")
+
 @app.get("/favicon.ico")
 def favicon():
     return Response(status_code=204)
 
 @app.get("/", include_in_schema=False)
 def root():
-    """Redirect root to API documentation."""
+    """Serve React frontend or redirect to API documentation."""
+    if frontend_build_path.exists():
+        return FileResponse(str(frontend_build_path / "index.html"))
     return RedirectResponse(url="/docs")
 
 
