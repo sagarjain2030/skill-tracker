@@ -17,6 +17,7 @@ class SkillCreate(SkillBase):
 class SkillUpdate(BaseModel):
     """Schema for updating an existing skill."""
     name: Optional[str] = Field(None, min_length=1, max_length=255, description="Skill name")
+    parent_id: Optional[int] = Field(None, description="Parent skill ID (use -1 to set as root skill)")
 
 
 class Skill(SkillBase):
