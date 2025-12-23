@@ -1,0 +1,191 @@
+.skill-node {
+  margin-left: calc(var(--level) * 2rem);
+  margin-bottom: 0.25rem;
+}
+
+.node-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.node-header:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+
+.node-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+
+.expand-btn:hover {
+  transform: scale(1.2);
+}
+
+.expand-spacer {
+  width: 24px;
+}
+
+.skill-name {
+  font-size: 1rem;
+  color: #333;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edit-input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 2px solid #667eea;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.edit-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.node-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-weight: bold;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.add-btn {
+  background: #e8f5e9;
+  color: #4caf50;
+}
+
+.add-btn:hover:not(:disabled) {
+  background: #4caf50;
+  color: white;
+}
+
+.edit-btn {
+  background: #e3f2fd;
+  color: #2196f3;
+}
+
+.edit-btn:hover:not(:disabled) {
+  background: #2196f3;
+  color: white;
+}
+
+.delete-btn {
+  background: #ffebee;
+  color: #f44336;
+}
+
+.delete-btn:hover:not(:disabled) {
+  background: #f44336;
+  color: white;
+}
+
+.add-child-form {
+  margin-top: 0.5rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.add-child-form form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.add-child-form input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.add-child-form input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.add-child-form button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-child-form button[type="submit"] {
+  background: #4caf50;
+  color: white;
+}
+
+.add-child-form button[type="submit"]:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.add-child-form button[type="button"] {
+  background: #f44336;
+  color: white;
+}
+
+.add-child-form button[type="button"]:hover:not(:disabled) {
+  background: #da190b;
+}
+
+.add-child-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.node-children {
+  margin-top: 0.5rem;
+}

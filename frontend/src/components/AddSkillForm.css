@@ -1,0 +1,60 @@
+.add-skill-form {
+  margin-bottom: 1.5rem;
+}
+
+.add-skill-form h3 {
+  color: #667eea;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.add-skill-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.add-skill-form input {
+  padding: 0.75rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.add-skill-form input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.add-skill-form input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.add-skill-form button {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-skill-form button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.add-skill-form button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.add-skill-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

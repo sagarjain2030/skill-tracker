@@ -1,0 +1,45 @@
+.skill-tree {
+  width: 100%;
+}
+
+.tree-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.tree-header h2 {
+  color: #667eea;
+  font-size: 1.5rem;
+}
+
+.tree-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.control-btn {
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 2px solid #667eea;
+  color: #667eea;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.control-btn:hover {
+  background: #667eea;
+  color: white;
+}
+
+.tree-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
