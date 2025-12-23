@@ -1,7 +1,7 @@
 """Skills API router."""
 from typing import Dict, List
 from fastapi import APIRouter, HTTPException, status
-from app.models.skill import Skill, SkillCreate
+from app.models.skill import Skill, SkillCreate, SkillUpdate
 from app.utils.validation import validate_no_cycle, CyclicDependencyError
 
 router = APIRouter(prefix="/skills", tags=["Skills"])
@@ -174,3 +174,76 @@ def create_subskill(parent_id: int, skill_data: SkillCreate) -> Skill:
     next_skill_id += 1
     
     return temp_skill
+
+
+@router.patch("/{skill_id}", response_model=Skill)
+def update_skill(skill_id: int, skill_data: SkillUpdate) -> Skill:
+    """
+    Update an existing skill's metadata.
+    
+    Can update name and/or parent_id. When updating parent_id:
+    - Use None to keep current parent
+    - Use -1 to convert to root skill (set parent_id to None)
+    - Use a valid skill ID to set as parent (validates no cycles)
+    
+    Args:
+        skill_id: The ID of the skill to update
+        skill_data: The update data (name and/or parent_id)
+        
+    Returns:
+        The updated skill
+        
+    Raises:
+        HTTPException 404: If skill not found
+        HTTPException 400: If new parent doesn't exist
+        HTTPException 409: If updating parent would create a cycle
+    """
+    # Check skill exists
+    if skill_id not in skills_db:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Skill with id {skill_id} not found"
+        )
+    
+    existing_skill = skills_db[skill_id]
+    
+    # Determine new parent_id
+    # If parent_id is explicitly in the update data (even if None), use it
+    # Special case: -1 means "set to root" (parent_id = None)
+    if skill_data.parent_id == -1:
+        new_parent_id = None
+    elif "parent_id" in skill_data.model_dump(exclude_unset=True):
+        new_parent_id = skill_data.parent_id
+    else:
+        new_parent_id = existing_skill.parent_id
+    
+    # Validate new parent exists (if not None)
+    if new_parent_id is not None and new_parent_id not in skills_db:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Parent skill with id {new_parent_id} not found"
+        )
+    
+    # If parent is changing, validate no cycles
+    if new_parent_id != existing_skill.parent_id:
+        # Create temporary parent map with the proposed change
+        temp_skill_parent_map = {sid: s.parent_id for sid, s in skills_db.items()}
+        temp_skill_parent_map[skill_id] = new_parent_id
+        
+        try:
+            validate_no_cycle(skill_id, new_parent_id, temp_skill_parent_map)
+        except CyclicDependencyError as e:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(e)
+            )
+    
+    # Update skill
+    updated_skill = Skill(
+        id=existing_skill.id,
+        name=skill_data.name if skill_data.name is not None else existing_skill.name,
+        parent_id=new_parent_id
+    )
+    
+    skills_db[skill_id] = updated_skill
+    return updated_skill
