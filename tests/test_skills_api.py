@@ -2,7 +2,8 @@
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
-from app.routers.skills import skills_db, next_skill_id
+from app.routers.skills import skills_db
+import app.routers.skills as skills_module
 
 client = TestClient(app)
 
@@ -10,10 +11,8 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def reset_skills_db():
     """Reset skills database before each test."""
-    global next_skill_id
     skills_db.clear()
     # Reset the module-level variable
-    import app.routers.skills as skills_module
     skills_module.next_skill_id = 1
     yield
     skills_db.clear()
