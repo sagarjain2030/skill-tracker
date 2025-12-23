@@ -1,6 +1,7 @@
 # app/main.py
 from fastapi import FastAPI, Response
 from fastapi.responses import RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
 import os
 from app.routers import skills
 
@@ -33,8 +34,23 @@ app = FastAPI(
     },
 )
 
+# Configure CORS
+allowed_origins = [
+    "http://localhost:3000",  # React dev server
+    "https://skill-tracker-p39k.onrender.com",  # Production frontend (if deployed separately)
+]
+
+# Allow all origins in development, specific origins in production
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins if os.getenv("ENVIRONMENT") == "production" else ["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Include routers
-app.include_router(skills.router)
+app.include_router(skills.router, prefix="/api")
 
 @app.get("/favicon.ico")
 def favicon():
