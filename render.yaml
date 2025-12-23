@@ -2,12 +2,10 @@ services:
   - type: web
     name: skill-tracker-api
     env: python
-    buildCommand: "pip install -r requirements.txt && cd frontend && npm install && npm run build"
+    buildCommand: "pip install -r requirements.txt && node --version && npm --version && cd frontend && npm install && npm run build && ls -la build"
     startCommand: "uvicorn app.main:app --host 0.0.0.0 --port 10000"
     envVars:
       - key: ENVIRONMENT
         value: production
       - key: PYTHON_VERSION
         value: 3.11.3
-      - key: NODE_VERSION
-        value: 18
