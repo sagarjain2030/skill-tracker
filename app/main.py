@@ -56,7 +56,10 @@ app.include_router(skills.router, prefix="/api")
 
 # Mount static files for React frontend (if build directory exists)
 frontend_build_path = Path(__file__).parent.parent / "frontend" / "build"
+print(f"Looking for frontend build at: {frontend_build_path}")
+print(f"Build directory exists: {frontend_build_path.exists()}")
 if frontend_build_path.exists():
+    print(f"Mounting static files from: {frontend_build_path / 'static'}")
     app.mount("/static", StaticFiles(directory=str(frontend_build_path / "static")), name="static")
 
 @app.get("/favicon.ico")
@@ -66,8 +69,11 @@ def favicon():
 @app.get("/", include_in_schema=False)
 def root():
     """Serve React frontend or redirect to API documentation."""
+    print(f"Root route called. Frontend build exists: {frontend_build_path.exists()}")
     if frontend_build_path.exists():
+        print(f"Serving frontend from: {frontend_build_path / 'index.html'}")
         return FileResponse(str(frontend_build_path / "index.html"))
+    print("Frontend build not found, redirecting to /docs")
     return RedirectResponse(url="/docs")
 
 
