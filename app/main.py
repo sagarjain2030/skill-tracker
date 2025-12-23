@@ -2,6 +2,7 @@
 from fastapi import FastAPI, Response
 from fastapi.responses import RedirectResponse
 import os
+from app.routers import skills
 
 app = FastAPI(
     title="Skill Tracker API",
@@ -15,12 +16,12 @@ app = FastAPI(
     * **Streak Calculation** - Track current and longest streaks
     * **Metrics & Analytics** - View skill-level and tree-level insights
     
-    ## Coming Soon
+    ## API Endpoints
     
-    * Skill CRUD operations
-    * Counter system
-    * Progress logging
-    * Tree traversal and aggregation
+    ### Skills
+    * `POST /skills` - Create a root skill
+    * `GET /skills` - List all skills
+    * `GET /skills/{id}` - Get a skill by ID
     """,
     version="0.1.0",
     contact={
@@ -31,6 +32,9 @@ app = FastAPI(
         "name": "MIT",
     },
 )
+
+# Include routers
+app.include_router(skills.router)
 
 @app.get("/favicon.ico")
 def favicon():
