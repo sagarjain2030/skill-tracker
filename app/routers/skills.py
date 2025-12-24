@@ -1,7 +1,7 @@
 """Skills API router."""
 from typing import Dict, List
 from fastapi import APIRouter, HTTPException, status
-from app.models.skill import Skill, SkillCreate, SkillUpdate
+from app.models.skill import Skill, SkillCreate, SkillUpdate, SkillWithChildren
 from app.utils.validation import validate_no_cycle, get_descendants, CyclicDependencyError
 
 router = APIRouter(prefix="/skills", tags=["Skills"])
@@ -89,6 +89,44 @@ def list_skills() -> List[Skill]:
     return list(skills_db.values())
 
 
+@router.get("/tree", response_model=List[SkillWithChildren])
+def get_skill_tree() -> List[SkillWithChildren]:
+    """
+    Get the complete skill hierarchy as a tree structure.
+    
+    Returns only root skills (skills with no parent), with all their
+    descendants nested in the 'children' field recursively.
+    
+    Returns:
+        List of root skills with nested children
+    """
+    def build_skill_tree(skill_id: int) -> SkillWithChildren:
+        """Recursively build a skill tree from a skill ID."""
+        skill = skills_db[skill_id]
+        
+        # Find all direct children
+        children_ids = [
+            sid for sid, s in skills_db.items() 
+            if s.parent_id == skill_id
+        ]
+        
+        # Recursively build children
+        children = [build_skill_tree(child_id) for child_id in children_ids]
+        
+        return SkillWithChildren(
+            id=skill.id,
+            name=skill.name,
+            parent_id=skill.parent_id,
+            children=children
+        )
+    
+    # Find all root skills (parent_id is None)
+    root_ids = [sid for sid, skill in skills_db.items() if skill.parent_id is None]
+    
+    # Build tree for each root
+    return [build_skill_tree(root_id) for root_id in root_ids]
+
+
 @router.get("/{skill_id}", response_model=Skill)
 def get_skill(skill_id: int) -> Skill:
     """
@@ -110,6 +148,53 @@ def get_skill(skill_id: int) -> Skill:
         )
     
     return skills_db[skill_id]
+
+
+@router.get("/{skill_id}/tree", response_model=SkillWithChildren)
+def get_skill_subtree(skill_id: int) -> SkillWithChildren:
+    """
+    Get a skill and all its descendants as a tree structure.
+    
+    Returns the specified skill with all its descendants nested
+    in the 'children' field recursively.
+    
+    Args:
+        skill_id: The ID of the skill to get the subtree for
+        
+    Returns:
+        The skill with nested children
+        
+    Raises:
+        HTTPException 404: If skill not found
+    """
+    # Check skill exists
+    if skill_id not in skills_db:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Skill with id {skill_id} not found"
+        )
+    
+    def build_skill_tree(sid: int) -> SkillWithChildren:
+        """Recursively build a skill tree from a skill ID."""
+        skill = skills_db[sid]
+        
+        # Find all direct children
+        children_ids = [
+            child_id for child_id, s in skills_db.items() 
+            if s.parent_id == sid
+        ]
+        
+        # Recursively build children
+        children = [build_skill_tree(child_id) for child_id in children_ids]
+        
+        return SkillWithChildren(
+            id=skill.id,
+            name=skill.name,
+            parent_id=skill.parent_id,
+            children=children
+        )
+    
+    return build_skill_tree(skill_id)
 
 
 @router.post("/{parent_id}/children", response_model=Skill, status_code=status.HTTP_201_CREATED)
