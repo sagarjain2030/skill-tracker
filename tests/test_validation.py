@@ -5,6 +5,8 @@ from app.utils.validation import (
     validate_no_cycle,
     get_ancestors,
     get_descendants,
+    traverse_dfs,
+    traverse_bfs,
 )
 
 
@@ -244,3 +246,220 @@ class TestCyclicDependencyIntegration:
         
         with pytest.raises(CyclicDependencyError):
             validate_no_cycle(2, 4, skill_parent_map)
+
+
+class TestTraverseDFS:
+    """Tests for depth-first search traversal."""
+
+    def test_dfs_single_node(self):
+        """Test DFS on a single node."""
+        skill_parent_map = {1: None}
+        result = traverse_dfs(1, skill_parent_map)
+        assert result == [1]
+
+    def test_dfs_linear_hierarchy(self):
+        """Test DFS on linear hierarchy: 1 -> 2 -> 3."""
+        skill_parent_map = {1: None, 2: 1, 3: 2}
+        result = traverse_dfs(1, skill_parent_map)
+        # DFS on linear tree: visits in order
+        assert result == [1, 2, 3]
+
+    def test_dfs_with_siblings(self):
+        """Test DFS with multiple children at same level."""
+        # Tree: 1 -> (2, 3)
+        skill_parent_map = {1: None, 2: 1, 3: 1}
+        result = traverse_dfs(1, skill_parent_map)
+        # Should visit root, then all children
+        assert result[0] == 1
+        assert set(result[1:]) == {2, 3}
+        assert len(result) == 3
+
+    def test_dfs_complex_tree(self):
+        """Test DFS on complex tree structure."""
+        # Tree:     1
+        #          / \
+        #         2   3
+        #        /
+        #       4
+        skill_parent_map = {1: None, 2: 1, 3: 1, 4: 2}
+        result = traverse_dfs(1, skill_parent_map)
+        
+        # Root is first
+        assert result[0] == 1
+        # All nodes are visited
+        assert set(result) == {1, 2, 3, 4}
+        assert len(result) == 4
+        # DFS property: if we visit 2, we must visit 4 before 3
+        idx_2 = result.index(2)
+        idx_3 = result.index(3)
+        idx_4 = result.index(4)
+        # 4 should come after 2 but before 3 (going deep first)
+        assert idx_2 < idx_4 < idx_3
+
+    def test_dfs_subtree(self):
+        """Test DFS starting from non-root node."""
+        # Tree:     1
+        #          / \
+        #         2   5
+        #        / \
+        #       3   4
+        skill_parent_map = {1: None, 2: 1, 3: 2, 4: 2, 5: 1}
+        result = traverse_dfs(2, skill_parent_map)
+        
+        # Should only include node 2 and its descendants
+        assert set(result) == {2, 3, 4}
+        assert result[0] == 2
+        # Should not include nodes 1 or 5
+        assert 1 not in result
+        assert 5 not in result
+
+    def test_dfs_deep_hierarchy(self):
+        """Test DFS on deep linear hierarchy."""
+        # 1 -> 2 -> 3 -> 4 -> 5
+        skill_parent_map = {1: None, 2: 1, 3: 2, 4: 3, 5: 4}
+        result = traverse_dfs(1, skill_parent_map)
+        # Linear structure should be visited in order
+        assert result == [1, 2, 3, 4, 5]
+
+    def test_dfs_multiple_branches(self):
+        """Test DFS with multiple branches."""
+        # Tree:       1
+        #          /  |  \
+        #         2   3   4
+        #        /        |
+        #       5         6
+        skill_parent_map = {1: None, 2: 1, 3: 1, 4: 1, 5: 2, 6: 4}
+        result = traverse_dfs(1, skill_parent_map)
+        
+        assert result[0] == 1
+        assert set(result) == {1, 2, 3, 4, 5, 6}
+        # DFS visits branch completely before moving to next
+        idx_2 = result.index(2)
+        idx_5 = result.index(5)
+        idx_3 = result.index(3)
+        # 5 should come right after 2, before 3
+        assert idx_2 < idx_5 < idx_3
+
+
+class TestTraverseBFS:
+    """Tests for breadth-first search traversal."""
+
+    def test_bfs_single_node(self):
+        """Test BFS on a single node."""
+        skill_parent_map = {1: None}
+        result = traverse_bfs(1, skill_parent_map)
+        assert result == [1]
+
+    def test_bfs_linear_hierarchy(self):
+        """Test BFS on linear hierarchy: 1 -> 2 -> 3."""
+        skill_parent_map = {1: None, 2: 1, 3: 2}
+        result = traverse_bfs(1, skill_parent_map)
+        # BFS on linear tree: visits in order (same as DFS for linear)
+        assert result == [1, 2, 3]
+
+    def test_bfs_with_siblings(self):
+        """Test BFS with multiple children at same level."""
+        # Tree: 1 -> (2, 3)
+        skill_parent_map = {1: None, 2: 1, 3: 1}
+        result = traverse_bfs(1, skill_parent_map)
+        # Should visit root, then all children at same level
+        assert result[0] == 1
+        assert set(result[1:]) == {2, 3}
+        assert len(result) == 3
+
+    def test_bfs_complex_tree(self):
+        """Test BFS on complex tree structure."""
+        # Tree:     1
+        #          / \
+        #         2   3
+        #        /
+        #       4
+        skill_parent_map = {1: None, 2: 1, 3: 1, 4: 2}
+        result = traverse_bfs(1, skill_parent_map)
+        
+        # Root is first
+        assert result[0] == 1
+        # Level 1 (children of root) comes before level 2
+        assert result[1:3] == [2, 3] or result[1:3] == [3, 2]
+        # Level 2 (grandchildren) comes last
+        assert result[3] == 4
+        # All nodes visited
+        assert set(result) == {1, 2, 3, 4}
+
+    def test_bfs_level_order(self):
+        """Test BFS visits nodes level by level."""
+        # Tree:       1
+        #          /  |  \
+        #         2   3   4
+        #        /        |
+        #       5         6
+        skill_parent_map = {1: None, 2: 1, 3: 1, 4: 1, 5: 2, 6: 4}
+        result = traverse_bfs(1, skill_parent_map)
+        
+        # Level 0: node 1
+        assert result[0] == 1
+        # Level 1: nodes 2, 3, 4 (all children of 1)
+        level1 = result[1:4]
+        assert set(level1) == {2, 3, 4}
+        # Level 2: nodes 5, 6 (grandchildren of 1)
+        level2 = result[4:6]
+        assert set(level2) == {5, 6}
+        # All nodes visited
+        assert len(result) == 6
+
+    def test_bfs_subtree(self):
+        """Test BFS starting from non-root node."""
+        # Tree:     1
+        #          / \
+        #         2   5
+        #        / \
+        #       3   4
+        skill_parent_map = {1: None, 2: 1, 3: 2, 4: 2, 5: 1}
+        result = traverse_bfs(2, skill_parent_map)
+        
+        # Should only include node 2 and its descendants
+        assert result[0] == 2
+        assert set(result) == {2, 3, 4}
+        # Should not include nodes 1 or 5
+        assert 1 not in result
+        assert 5 not in result
+
+    def test_bfs_deep_hierarchy(self):
+        """Test BFS on deep linear hierarchy."""
+        # 1 -> 2 -> 3 -> 4 -> 5
+        skill_parent_map = {1: None, 2: 1, 3: 2, 4: 3, 5: 4}
+        result = traverse_bfs(1, skill_parent_map)
+        # Linear structure: BFS and DFS give same result
+        assert result == [1, 2, 3, 4, 5]
+
+    def test_bfs_vs_dfs_difference(self):
+        """Test that BFS differs from DFS on branching tree."""
+        # Tree:     1
+        #          / \
+        #         2   3
+        #        / \
+        #       4   5
+        skill_parent_map = {1: None, 2: 1, 3: 1, 4: 2, 5: 2}
+        
+        bfs_result = traverse_bfs(1, skill_parent_map)
+        dfs_result = traverse_dfs(1, skill_parent_map)
+        
+        # Both start with root
+        assert bfs_result[0] == 1
+        assert dfs_result[0] == 1
+        
+        # BFS: 1, then level 1 (2,3), then level 2 (4,5)
+        # So 3 comes before 4 and 5
+        bfs_idx_3 = bfs_result.index(3)
+        bfs_idx_4 = bfs_result.index(4)
+        bfs_idx_5 = bfs_result.index(5)
+        assert bfs_idx_3 < bfs_idx_4
+        assert bfs_idx_3 < bfs_idx_5
+        
+        # DFS: 1, then 2, then 2's children (4,5), then 3
+        # So 3 comes after 4 and 5
+        dfs_idx_3 = dfs_result.index(3)
+        dfs_idx_4 = dfs_result.index(4)
+        dfs_idx_5 = dfs_result.index(5)
+        assert dfs_idx_3 > dfs_idx_4
+        assert dfs_idx_3 > dfs_idx_5
