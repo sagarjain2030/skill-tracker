@@ -165,9 +165,9 @@ function SkillNode({
             className="action-btn counter-btn"
             onClick={() => setShowCounters(!showCounters)}
             disabled={loading}
-            title="View counters"
+            title={`View counters (${(skill.counters?.length || 0)} direct)`}
           >
-            📊
+            📊 {(skill.counters?.length || 0) > 0 && <span className="counter-badge">{skill.counters.length}</span>}
           </button>
           <button
             className="action-btn add-btn"
@@ -227,7 +227,7 @@ function SkillNode({
       {showCounters && (
         <div className="counters-section">
           <div className="counters-header">
-            <h4>Counters</h4>
+            <h4>Counters for {skill.name}</h4>
             <button
               className="add-counter-btn"
               onClick={() => setShowAddCounter(!showAddCounter)}
@@ -289,9 +289,40 @@ function SkillNode({
             </div>
           )}
 
-          {skill.counters && skill.counters.length > 0 && (
+          {/* Show accumulated counters (includes own + children) */}
+          {skill.accumulatedCounters && skill.accumulatedCounters.length > 0 ? (
             <div className="counters-list">
-              <h5>Direct Counters:</h5>
+              <h5>📈 Total (this skill + all children):</h5>
+              {skill.accumulatedCounters.map((counter, idx) => (
+                <div key={idx} className="accumulated-counter-item">
+                  <div className="counter-info">
+                    <span className="counter-name">{counter.name}</span>
+                    <span className="counter-value accumulated">
+                      {counter.value.toFixed(1)} {counter.unit || ''}
+                      {counter.target && ` / ${counter.target}`}
+                    </span>
+                    {counter.target && (
+                      <div className="counter-progress">
+                        <div 
+                          className="progress-bar accumulated" 
+                          style={{width: `${Math.min((counter.value / counter.target) * 100, 100)}%`}}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{color: '#999', padding: '1rem', textAlign: 'center'}}>
+              No counters yet. Click "+ Add Counter" to create one.
+            </p>
+          )}
+
+          {/* Show direct counters (only this skill) */}
+          {skill.counters && skill.counters.length > 0 && (
+            <div className="counters-list" style={{marginTop: '1rem'}}>
+              <h5>🎯 Direct (this skill only):</h5>
               {skill.counters.map(counter => (
                 <div key={counter.id} className="counter-item">
                   <div className="counter-info">
@@ -333,29 +364,6 @@ function SkillNode({
                       ×
                     </button>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {skill.accumulatedCounters && skill.accumulatedCounters.length > 0 && (
-            <div className="accumulated-counters">
-              <h5>Total (including children):</h5>
-              {skill.accumulatedCounters.map((counter, idx) => (
-                <div key={idx} className="accumulated-counter-item">
-                  <span className="counter-name">{counter.name}</span>
-                  <span className="counter-value accumulated">
-                    {counter.value.toFixed(1)} {counter.unit || ''}
-                    {counter.target && ` / ${counter.target}`}
-                  </span>
-                  {counter.target && (
-                    <div className="counter-progress">
-                      <div 
-                        className="progress-bar accumulated" 
-                        style={{width: `${Math.min((counter.value / counter.target) * 100, 100)}%`}}
-                      />
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
