@@ -856,3 +856,341 @@ class TestDeleteSkill:
         # Only child2 should be deleted
         assert client.get(f"/api/skills/{child2_id}").status_code == 404
 
+
+class TestGetSkillTree:
+    """Tests for GET /api/skills/tree endpoint - fetching full hierarchical tree."""
+
+    def test_get_empty_tree(self):
+        """Test getting tree when no skills exist."""
+        response = client.get("/api/skills/tree")
+        
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_get_tree_single_root(self):
+        """Test getting tree with a single root skill."""
+        # Create root skill
+        root_response = client.post("/api/skills/", json={"name": "Python"})
+        root_id = root_response.json()["id"]
+        
+        response = client.get("/api/skills/tree")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["id"] == root_id
+        assert data[0]["name"] == "Python"
+        assert data[0]["parent_id"] is None
+        assert data[0]["children"] == []
+
+    def test_get_tree_multiple_roots(self):
+        """Test getting tree with multiple root skills."""
+        # Create root skills
+        root1_response = client.post("/api/skills/", json={"name": "Python"})
+        root2_response = client.post("/api/skills/", json={"name": "JavaScript"})
+        root1_id = root1_response.json()["id"]
+        root2_id = root2_response.json()["id"]
+        
+        response = client.get("/api/skills/tree")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        
+        ids = {skill["id"] for skill in data}
+        assert ids == {root1_id, root2_id}
+        
+        for skill in data:
+            assert skill["parent_id"] is None
+            assert skill["children"] == []
+
+    def test_get_tree_with_children(self):
+        """Test getting tree with parent-child relationships."""
+        # Create root
+        root_response = client.post("/api/skills/", json={"name": "Programming"})
+        root_id = root_response.json()["id"]
+        
+        # Create children
+        child1_response = client.post(
+            f"/api/skills/{root_id}/children",
+            json={"name": "Python"}
+        )
+        child2_response = client.post(
+            f"/api/skills/{root_id}/children",
+            json={"name": "JavaScript"}
+        )
+        child1_id = child1_response.json()["id"]
+        child2_id = child2_response.json()["id"]
+        
+        response = client.get("/api/skills/tree")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        
+        root = data[0]
+        assert root["id"] == root_id
+        assert root["name"] == "Programming"
+        assert len(root["children"]) == 2
+        
+        child_ids = {child["id"] for child in root["children"]}
+        assert child_ids == {child1_id, child2_id}
+        
+        for child in root["children"]:
+            assert child["parent_id"] == root_id
+            assert child["children"] == []
+
+    def test_get_tree_deep_hierarchy(self):
+        """Test getting tree with multi-level nesting."""
+        # Create: Root -> Child -> Grandchild
+        root_response = client.post("/api/skills/", json={"name": "Tech"})
+        root_id = root_response.json()["id"]
+        
+        child_response = client.post(
+            f"/api/skills/{root_id}/children",
+            json={"name": "Programming"}
+        )
+        child_id = child_response.json()["id"]
+        
+        grandchild_response = client.post(
+            f"/api/skills/{child_id}/children",
+            json={"name": "Python"}
+        )
+        grandchild_id = grandchild_response.json()["id"]
+        
+        response = client.get("/api/skills/tree")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        
+        # Verify root
+        root = data[0]
+        assert root["id"] == root_id
+        assert len(root["children"]) == 1
+        
+        # Verify child
+        child = root["children"][0]
+        assert child["id"] == child_id
+        assert child["parent_id"] == root_id
+        assert len(child["children"]) == 1
+        
+        # Verify grandchild
+        grandchild = child["children"][0]
+        assert grandchild["id"] == grandchild_id
+        assert grandchild["parent_id"] == child_id
+        assert grandchild["children"] == []
+
+    def test_get_tree_complex_structure(self):
+        """Test getting tree with complex multi-root, multi-level structure."""
+        # Create: Root1 -> Child1A, Child1B -> Grandchild1B
+        #         Root2 -> Child2A
+        root1_response = client.post("/api/skills/", json={"name": "Backend"})
+        root2_response = client.post("/api/skills/", json={"name": "Frontend"})
+        root1_id = root1_response.json()["id"]
+        root2_id = root2_response.json()["id"]
+        
+        child1a = client.post(f"/api/skills/{root1_id}/children", json={"name": "Python"})
+        child1b = client.post(f"/api/skills/{root1_id}/children", json={"name": "Node.js"})
+        child2a = client.post(f"/api/skills/{root2_id}/children", json={"name": "React"})
+        
+        child1b_id = child1b.json()["id"]
+        grandchild1b = client.post(
+            f"/api/skills/{child1b_id}/children",
+            json={"name": "Express"}
+        )
+        
+        response = client.get("/api/skills/tree")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        
+        # Find roots
+        root1 = next(r for r in data if r["id"] == root1_id)
+        root2 = next(r for r in data if r["id"] == root2_id)
+        
+        # Verify root1 structure
+        assert len(root1["children"]) == 2
+        child1b_node = next(c for c in root1["children"] if c["id"] == child1b_id)
+        assert len(child1b_node["children"]) == 1
+        assert child1b_node["children"][0]["name"] == "Express"
+        
+        # Verify root2 structure
+        assert len(root2["children"]) == 1
+        assert root2["children"][0]["name"] == "React"
+
+
+class TestGetSkillSubtree:
+    """Tests for GET /api/skills/{skill_id}/tree endpoint - fetching specific subtree."""
+
+    def test_get_subtree_leaf_skill(self):
+        """Test getting subtree for a skill with no children."""
+        # Create root and child
+        root_response = client.post("/api/skills/", json={"name": "Programming"})
+        root_id = root_response.json()["id"]
+        
+        child_response = client.post(
+            f"/api/skills/{root_id}/children",
+            json={"name": "Python"}
+        )
+        child_id = child_response.json()["id"]
+        
+        response = client.get(f"/api/skills/{child_id}/tree")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == child_id
+        assert data["name"] == "Python"
+        assert data["parent_id"] == root_id
+        assert data["children"] == []
+
+    def test_get_subtree_with_children(self):
+        """Test getting subtree for a skill with children."""
+        # Create root -> parent -> child1, child2
+        root_response = client.post("/api/skills/", json={"name": "Tech"})
+        root_id = root_response.json()["id"]
+        
+        parent_response = client.post(
+            f"/api/skills/{root_id}/children",
+            json={"name": "Programming"}
+        )
+        parent_id = parent_response.json()["id"]
+        
+        child1_response = client.post(
+            f"/api/skills/{parent_id}/children",
+            json={"name": "Python"}
+        )
+        child2_response = client.post(
+            f"/api/skills/{parent_id}/children",
+            json={"name": "JavaScript"}
+        )
+        child1_id = child1_response.json()["id"]
+        child2_id = child2_response.json()["id"]
+        
+        response = client.get(f"/api/skills/{parent_id}/tree")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == parent_id
+        assert data["name"] == "Programming"
+        assert len(data["children"]) == 2
+        
+        child_ids = {child["id"] for child in data["children"]}
+        assert child_ids == {child1_id, child2_id}
+
+    def test_get_subtree_deep_hierarchy(self):
+        """Test getting subtree starting from middle of deep hierarchy."""
+        # Create: Root -> Parent -> Child -> Grandchild
+        root_response = client.post("/api/skills/", json={"name": "Root"})
+        root_id = root_response.json()["id"]
+        
+        parent_response = client.post(
+            f"/api/skills/{root_id}/children",
+            json={"name": "Parent"}
+        )
+        parent_id = parent_response.json()["id"]
+        
+        child_response = client.post(
+            f"/api/skills/{parent_id}/children",
+            json={"name": "Child"}
+        )
+        child_id = child_response.json()["id"]
+        
+        grandchild_response = client.post(
+            f"/api/skills/{child_id}/children",
+            json={"name": "Grandchild"}
+        )
+        grandchild_id = grandchild_response.json()["id"]
+        
+        # Get subtree starting from parent
+        response = client.get(f"/api/skills/{parent_id}/tree")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == parent_id
+        assert len(data["children"]) == 1
+        
+        child = data["children"][0]
+        assert child["id"] == child_id
+        assert len(child["children"]) == 1
+        
+        grandchild = child["children"][0]
+        assert grandchild["id"] == grandchild_id
+        assert grandchild["children"] == []
+
+    def test_get_subtree_root_skill(self):
+        """Test getting subtree for a root skill."""
+        # Create root with children
+        root_response = client.post("/api/skills/", json={"name": "Programming"})
+        root_id = root_response.json()["id"]
+        
+        child1 = client.post(f"/api/skills/{root_id}/children", json={"name": "Python"})
+        child2 = client.post(f"/api/skills/{root_id}/children", json={"name": "JavaScript"})
+        
+        response = client.get(f"/api/skills/{root_id}/tree")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == root_id
+        assert data["parent_id"] is None
+        assert len(data["children"]) == 2
+
+    def test_get_subtree_nonexistent_skill(self):
+        """Test getting subtree for non-existent skill."""
+        response = client.get("/api/skills/999/tree")
+        
+        assert response.status_code == 404
+        assert "not found" in response.json()["detail"].lower()
+
+    def test_get_subtree_excludes_siblings(self):
+        """Test that subtree only includes descendants, not siblings."""
+        # Create: Root -> Child1 -> Grandchild1
+        #              -> Child2 -> Grandchild2
+        root_response = client.post("/api/skills/", json={"name": "Root"})
+        root_id = root_response.json()["id"]
+        
+        child1_response = client.post(
+            f"/api/skills/{root_id}/children",
+            json={"name": "Child1"}
+        )
+        child2_response = client.post(
+            f"/api/skills/{root_id}/children",
+            json={"name": "Child2"}
+        )
+        child1_id = child1_response.json()["id"]
+        child2_id = child2_response.json()["id"]
+        
+        grandchild1 = client.post(
+            f"/api/skills/{child1_id}/children",
+            json={"name": "Grandchild1"}
+        )
+        grandchild2 = client.post(
+            f"/api/skills/{child2_id}/children",
+            json={"name": "Grandchild2"}
+        )
+        grandchild1_id = grandchild1.json()["id"]
+        grandchild2_id = grandchild2.json()["id"]
+        
+        # Get subtree for child1
+        response = client.get(f"/api/skills/{child1_id}/tree")
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Should have child1 and grandchild1, but not child2 or grandchild2
+        assert data["id"] == child1_id
+        assert len(data["children"]) == 1
+        assert data["children"][0]["id"] == grandchild1_id
+        
+        # Verify child2 and grandchild2 are not in the tree
+        def get_all_ids(node):
+            ids = {node["id"]}
+            for child in node["children"]:
+                ids.update(get_all_ids(child))
+            return ids
+        
+        all_ids = get_all_ids(data)
+        assert child2_id not in all_ids
+        assert grandchild2_id not in all_ids
+
