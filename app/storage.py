@@ -1,6 +1,5 @@
 """Persistent storage management for skills and counters."""
 import json
-import os
 from pathlib import Path
 from typing import Dict
 from app.models.skill import Skill
