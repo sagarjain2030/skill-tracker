@@ -73,6 +73,22 @@ function App() {
     }
   };
 
+  const handleClearAllData = async () => {
+    const confirmed = window.confirm(
+      '⚠️ WARNING: This will permanently delete ALL skills and counters. This action cannot be undone!\n\nAre you sure you want to continue?'
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      await counterService.clearAllData();
+      await loadData();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to clear data');
+      throw err;
+    }
+  };
+
   // Build tree structure from flat list with counters
   const buildTree = (skills, counters) => {
     const skillMap = {};
@@ -150,6 +166,13 @@ function App() {
       <header className="App-header">
         <h1>🎯 Skill Tracker</h1>
         <p>Hierarchical Skill Management System</p>
+        <button 
+          className="clear-data-btn"
+          onClick={handleClearAllData}
+          title="Delete all skills and counters"
+        >
+          🗑️ Clear All Data
+        </button>
       </header>
 
       <main className="App-main">

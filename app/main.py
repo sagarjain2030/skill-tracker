@@ -1,11 +1,12 @@
 # app/main.py
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, status
 from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from pathlib import Path
 from app.routers import skills, counters
+from app.storage import clear_all_data
 
 app = FastAPI(
     title="Skill Tracker API",
@@ -91,3 +92,25 @@ def version():
         "service": os.getenv("RENDER_SERVICE_NAME", "unknown"),
         "version": app.version,
     }
+
+@app.delete("/api/data", status_code=status.HTTP_204_NO_CONTENT, tags=["System"])
+def clear_all_app_data():
+    """
+    Delete all persisted data (skills and counters).
+    
+    ⚠️ WARNING: This permanently deletes all data and cannot be undone.
+    
+    Use this to reset your application to a clean state.
+    """
+    # Clear in-memory storage
+    skills.skills_db.clear()
+    counters.counters_db.clear()
+    
+    # Reset ID counters
+    skills.next_skill_id = 1
+    counters.next_counter_id = 1
+    
+    # Clear persistent files
+    clear_all_data()
+    
+    return None

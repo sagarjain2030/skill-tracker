@@ -3,12 +3,13 @@ from typing import Dict, List
 from fastapi import APIRouter, HTTPException, status
 from app.models.skill import Skill, SkillCreate, SkillUpdate, SkillWithChildren
 from app.utils.validation import validate_no_cycle, get_descendants, CyclicDependencyError
+from app.storage import load_skills, save_skills, get_next_skill_id
 
 router = APIRouter(prefix="/skills", tags=["Skills"])
 
-# In-memory storage for skills (will be replaced with database later)
-skills_db: Dict[int, Skill] = {}
-next_skill_id = 1
+# Load skills from persistent storage
+skills_db: Dict[int, Skill] = load_skills()
+next_skill_id = get_next_skill_id(skills_db)
 
 
 def _get_all_skills() -> Dict[int, Skill]:
@@ -74,6 +75,7 @@ def create_root_skill(skill_data: SkillCreate) -> Skill:
     
     skills_db[next_skill_id] = skill
     next_skill_id += 1
+    save_skills(skills_db)
     
     return skill
 
@@ -257,6 +259,7 @@ def create_subskill(parent_id: int, skill_data: SkillCreate) -> Skill:
     # Add to database
     skills_db[new_skill_id] = temp_skill
     next_skill_id += 1
+    save_skills(skills_db)
     
     return temp_skill
 
@@ -331,6 +334,7 @@ def update_skill(skill_id: int, skill_data: SkillUpdate) -> Skill:
     )
     
     skills_db[skill_id] = updated_skill
+    save_skills(skills_db)
     return updated_skill
 
 
@@ -372,6 +376,7 @@ def delete_skill(skill_id: int) -> None:
     skills_to_delete = {skill_id} | descendants
     for sid in skills_to_delete:
         del skills_db[sid]
+    save_skills(skills_db)
     
     # Return None for 204 No Content
     return None

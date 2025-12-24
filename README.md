@@ -6,7 +6,16 @@ A hierarchical skill tracking system with progress monitoring, streaks, and anal
 
 - **Backend**: FastAPI (Python)
 - **Frontend**: React (JavaScript)
-- **Database**: In-memory (to be replaced with SQLAlchemy + PostgreSQL in Milestone-3)
+- **Storage**: File-based JSON persistence (auto-saved, see [docs/PERSISTENCE.md](docs/PERSISTENCE.md))
+- **Database**: PostgreSQL migration planned for Milestone-3
+
+## Features
+
+- 🌲 **Hierarchical Skill Trees** - Organize skills in parent-child relationships
+- 📊 **Progress Counters** - Track metrics like hours, exercises, videos watched
+- 🔢 **Counter Accumulation** - Automatically sum counters from children to parents
+- 💾 **Auto-Persistence** - All data automatically saved and preserved across restarts
+- 🎨 **Interactive UI** - Expand/collapse nodes, inline editing, drag-and-drop ready
 
 ## Getting Started
 
