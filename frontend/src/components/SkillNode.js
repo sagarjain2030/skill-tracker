@@ -290,7 +290,7 @@ function SkillNode({
           )}
 
           {/* Show accumulated counters (includes own + children) */}
-          {skill.accumulatedCounters && skill.accumulatedCounters.length > 0 ? (
+          {skill.accumulatedCounters && skill.accumulatedCounters.length > 0 && (
             <div className="counters-list">
               <h5>📈 Total (this skill + all children):</h5>
               {skill.accumulatedCounters.map((counter, idx) => (
@@ -313,7 +313,11 @@ function SkillNode({
                 </div>
               ))}
             </div>
-          ) : (
+          )}
+
+          {/* Show message if no counters at all */}
+          {(!skill.accumulatedCounters || skill.accumulatedCounters.length === 0) && 
+           (!skill.counters || skill.counters.length === 0) && (
             <p style={{color: '#999', padding: '1rem', textAlign: 'center'}}>
               No counters yet. Click "+ Add Counter" to create one.
             </p>
@@ -368,34 +372,6 @@ function SkillNode({
               ))}
             </div>
           )}
-        </div>
-      )}
-
-      {showAddChild && (
-        <div className="add-child-form">
-          <form onSubmit={handleAddChild}>
-            <input
-              type="text"
-              value={childName}
-              onChange={(e) => setChildName(e.target.value)}
-              placeholder="New subskill name..."
-              disabled={loading}
-              maxLength={255}
-            />
-            <button type="submit" disabled={!childName.trim() || loading}>
-              Add
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowAddChild(false);
-                setChildName('');
-              }}
-              disabled={loading}
-            >
-              Cancel
-            </button>
-          </form>
         </div>
       )}
 
