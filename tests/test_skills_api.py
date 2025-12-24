@@ -990,12 +990,12 @@ class TestGetSkillTree:
         root1_id = root1_response.json()["id"]
         root2_id = root2_response.json()["id"]
         
-        child1a = client.post(f"/api/skills/{root1_id}/children", json={"name": "Python"})
+        client.post(f"/api/skills/{root1_id}/children", json={"name": "Python"})
         child1b = client.post(f"/api/skills/{root1_id}/children", json={"name": "Node.js"})
-        child2a = client.post(f"/api/skills/{root2_id}/children", json={"name": "React"})
+        client.post(f"/api/skills/{root2_id}/children", json={"name": "React"})
         
         child1b_id = child1b.json()["id"]
-        grandchild1b = client.post(
+        client.post(
             f"/api/skills/{child1b_id}/children",
             json={"name": "Express"}
         )
@@ -1125,8 +1125,8 @@ class TestGetSkillSubtree:
         root_response = client.post("/api/skills/", json={"name": "Programming"})
         root_id = root_response.json()["id"]
         
-        child1 = client.post(f"/api/skills/{root_id}/children", json={"name": "Python"})
-        child2 = client.post(f"/api/skills/{root_id}/children", json={"name": "JavaScript"})
+        client.post(f"/api/skills/{root_id}/children", json={"name": "Python"})
+        client.post(f"/api/skills/{root_id}/children", json={"name": "JavaScript"})
         
         response = client.get(f"/api/skills/{root_id}/tree")
         
