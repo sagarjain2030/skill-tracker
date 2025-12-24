@@ -127,6 +127,16 @@
   color: white;
 }
 
+.counter-btn {
+  background: #fff3e0;
+  color: #ff9800;
+}
+
+.counter-btn:hover:not(:disabled) {
+  background: #ff9800;
+  color: white;
+}
+
 .add-child-form {
   margin-top: 0.5rem;
   padding: 1rem;
@@ -189,3 +199,204 @@
 .node-children {
   margin-top: 0.5rem;
 }
+
+/* Counter styles */
+.counters-section {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  background: #f5f5f5;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.counters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.counters-header h4 {
+  margin: 0;
+  color: #667eea;
+  font-size: 1rem;
+}
+
+.add-counter-btn {
+  padding: 0.4rem 0.8rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-counter-btn:hover:not(:disabled) {
+  background: #5568d3;
+}
+
+.add-counter-form {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+}
+
+.add-counter-form form {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.add-counter-form input {
+  padding: 0.5rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.add-counter-form input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.add-counter-form button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-counter-form button[type="submit"] {
+  background: #4caf50;
+  color: white;
+  grid-column: span 2;
+}
+
+.add-counter-form button[type="submit"]:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.add-counter-form button[type="button"] {
+  background: #f44336;
+  color: white;
+  grid-column: span 2;
+}
+
+.add-counter-form button[type="button"]:hover:not(:disabled) {
+  background: #da190b;
+}
+
+.counters-list h5,
+.accumulated-counters h5 {
+  margin: 0 0 0.5rem 0;
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.counter-item,
+.accumulated-counter-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.counter-item:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.1);
+}
+
+.accumulated-counter-item {
+  background: #e8eaf6;
+  border-color: #c5cae9;
+}
+
+.counter-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.counter-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.counter-value {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.counter-value.accumulated {
+  color: #5c6bc0;
+  font-weight: 600;
+}
+
+.counter-progress {
+  width: 100%;
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 0.25rem;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, #81c784);
+  transition: width 0.3s ease;
+}
+
+.progress-bar.accumulated {
+  background: linear-gradient(90deg, #5c6bc0, #7986cb);
+}
+
+.counter-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.counter-actions button {
+  padding: 0.4rem 0.6rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.counter-actions button:hover:not(:disabled) {
+  background: #5568d3;
+}
+
+.delete-counter-btn {
+  background: #f44336 !important;
+}
+
+.delete-counter-btn:hover:not(:disabled) {
+  background: #da190b !important;
+}
+
+.accumulated-counters {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 2px solid #e0e0e0;
+}
+

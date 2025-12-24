@@ -1,28 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import skillService from './services/api';
+import skillService, { counterService } from './services/api';
 import SkillTree from './components/SkillTree';
 import AddSkillForm from './components/AddSkillForm';
 import './App.css';
 
 function App() {
   const [skills, setSkills] = useState([]);
+  const [counters, setCounters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load skills on mount
+  // Load skills and counters on mount
   useEffect(() => {
-    loadSkills();
+    loadData();
   }, []);
 
-  const loadSkills = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await skillService.getAllSkills();
-      setSkills(data);
+      const [skillsData, countersData] = await Promise.all([
+        skillService.getAllSkills(),
+        counterService.getAllCounters()
+      ]);
+      setSkills(skillsData);
+      setCounters(countersData);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to load skills');
-      console.error('Error loading skills:', err);
+      setError(err.response?.data?.detail || 'Failed to load data');
+      console.error('Error loading data:', err);
     } finally {
       setLoading(false);
     }
@@ -31,7 +36,7 @@ function App() {
   const handleAddRootSkill = async (name) => {
     try {
       await skillService.createRootSkill(name);
-      await loadSkills();
+      await loadData();
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to create skill');
       throw err;
@@ -41,7 +46,7 @@ function App() {
   const handleAddSubskill = async (parentId, name) => {
     try {
       await skillService.createSubskill(parentId, name);
-      await loadSkills();
+      await loadData();
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to create subskill');
       throw err;
@@ -51,7 +56,7 @@ function App() {
   const handleUpdateSkill = async (id, updates) => {
     try {
       await skillService.updateSkill(id, updates);
-      await loadSkills();
+      await loadData();
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to update skill');
       throw err;
@@ -61,21 +66,25 @@ function App() {
   const handleDeleteSkill = async (id) => {
     try {
       await skillService.deleteSkill(id);
-      await loadSkills();
+      await loadData();
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to delete skill');
       throw err;
     }
   };
 
-  // Build tree structure from flat list
-  const buildTree = (skills) => {
+  // Build tree structure from flat list with counters
+  const buildTree = (skills, counters) => {
     const skillMap = {};
     const roots = [];
 
-    // Create a map of all skills
+    // Create a map of all skills with counters
     skills.forEach(skill => {
-      skillMap[skill.id] = { ...skill, children: [] };
+      skillMap[skill.id] = { 
+        ...skill, 
+        children: [],
+        counters: counters.filter(c => c.skill_id === skill.id)
+      };
     });
 
     // Build the tree
@@ -87,10 +96,55 @@ function App() {
       }
     });
 
+    // Calculate accumulated counters for each node
+    const calculateAccumulatedCounters = (node) => {
+      // Start with direct counters
+      const accumulated = {};
+      
+      node.counters.forEach(counter => {
+        const key = `${counter.name}|${counter.unit || ''}`;
+        if (!accumulated[key]) {
+          accumulated[key] = {
+            name: counter.name,
+            unit: counter.unit,
+            value: 0,
+            target: counter.target,
+            ids: []
+          };
+        }
+        accumulated[key].value += counter.value;
+        accumulated[key].ids.push(counter.id);
+      });
+
+      // Recursively add children's counters
+      node.children.forEach(child => {
+        const childAccumulated = calculateAccumulatedCounters(child);
+        Object.entries(childAccumulated).forEach(([key, data]) => {
+          if (!accumulated[key]) {
+            accumulated[key] = {
+              name: data.name,
+              unit: data.unit,
+              value: 0,
+              target: data.target,
+              ids: []
+            };
+          }
+          accumulated[key].value += data.value;
+          accumulated[key].ids.push(...data.ids);
+        });  onRefresh={loadData}
+              
+      });
+
+      node.accumulatedCounters = Object.values(accumulated);
+      return accumulated;
+    };
+
+    roots.forEach(root => calculateAccumulatedCounters(root));
+
     return roots;
   };
 
-  const skillTree = buildTree(skills);
+  const skillTree = buildTree(skills, counters);
 
   return (
     <div className="App">

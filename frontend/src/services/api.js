@@ -46,4 +46,49 @@ const skillService = {
   }
 };
 
+// API service for counter operations
+const counterService = {
+  // Get all counters for a skill
+  getCountersBySkill: async (skillId) => {
+    const response = await axios.get(`${API_BASE_URL}/counters/?skill_id=${skillId}`);
+    return response.data;
+  },
+
+  // Get all counters
+  getAllCounters: async () => {
+    const response = await axios.get(`${API_BASE_URL}/counters/`);
+    return response.data;
+  },
+
+  // Get a single counter by ID
+  getCounter: async (id) => {
+    const response = await axios.get(`${API_BASE_URL}/counters/${id}`);
+    return response.data;
+  },
+
+  // Create a counter
+  createCounter: async (skillId, counterData) => {
+    const response = await axios.post(`${API_BASE_URL}/counters/?skill_id=${skillId}`, counterData);
+    return response.data;
+  },
+
+  // Update a counter
+  updateCounter: async (id, updates) => {
+    const response = await axios.patch(`${API_BASE_URL}/counters/${id}`, updates);
+    return response.data;
+  },
+
+  // Delete a counter
+  deleteCounter: async (id) => {
+    await axios.delete(`${API_BASE_URL}/counters/${id}`);
+  },
+
+  // Increment counter value
+  incrementCounter: async (id, amount = 1.0) => {
+    const response = await axios.post(`${API_BASE_URL}/counters/${id}/increment?amount=${amount}`);
+    return response.data;
+  }
+};
+
+export { skillService, counterService };
 export default skillService;
