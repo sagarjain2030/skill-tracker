@@ -87,6 +87,12 @@ const counterService = {
   incrementCounter: async (id, amount = 1.0) => {
     const response = await axios.post(`${API_BASE_URL}/counters/${id}/increment?amount=${amount}`);
     return response.data;
+  },
+
+  // Clear all data (skills and counters)
+  clearAllData: async () => {
+    const response = await axios.delete(`${API_BASE_URL}/data`);
+    return response.data;
   }
 };
 

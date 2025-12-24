@@ -2,12 +2,13 @@
 from typing import Dict, List
 from fastapi import APIRouter, HTTPException, status
 from app.models.counter import Counter, CounterCreate, CounterUpdate
+from app.storage import load_counters, save_counters, get_next_counter_id
 
 router = APIRouter(prefix="/counters", tags=["Counters"])
 
-# In-memory storage for counters (will be replaced with database later)
-counters_db: Dict[int, Counter] = {}
-next_counter_id = 1
+# Load counters from persistent storage
+counters_db: Dict[int, Counter] = load_counters()
+next_counter_id = get_next_counter_id(counters_db)
 
 
 @router.post("/", response_model=Counter, status_code=status.HTTP_201_CREATED)
@@ -52,6 +53,7 @@ def create_counter(skill_id: int, counter_data: CounterCreate) -> Counter:
     
     counters_db[next_counter_id] = counter
     next_counter_id += 1
+    save_counters(counters_db)
     
     return counter
 
@@ -135,6 +137,7 @@ def update_counter(counter_id: int, counter_data: CounterUpdate) -> Counter:
     )
     
     counters_db[counter_id] = updated_counter
+    save_counters(counters_db)
     return updated_counter
 
 
@@ -161,6 +164,7 @@ def delete_counter(counter_id: int) -> None:
     
     # Delete the counter
     del counters_db[counter_id]
+    save_counters(counters_db)
     return None
 
 
@@ -211,4 +215,5 @@ def increment_counter(counter_id: int, amount: float = 1.0) -> Counter:
     )
     
     counters_db[counter_id] = updated_counter
+    save_counters(counters_db)
     return updated_counter
