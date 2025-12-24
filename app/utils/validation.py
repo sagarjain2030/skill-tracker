@@ -1,5 +1,6 @@
 """Validation utilities for skill hierarchy."""
-from typing import Dict, Optional, Set
+from typing import Dict, Optional, Set, List
+from collections import deque
 
 
 class CyclicDependencyError(ValueError):
@@ -148,3 +149,116 @@ def get_descendants(
             descendants.update(get_descendants(child_id, skill_parent_map))
     
     return descendants
+
+
+def traverse_dfs(
+    skill_id: int,
+    skill_parent_map: Dict[int, Optional[int]]
+) -> List[int]:
+    """
+    Perform depth-first search (DFS) traversal starting from a skill.
+    
+    Visits the skill, then recursively visits all its children in depth-first order.
+    This means going as deep as possible down one branch before backtracking.
+    
+    Args:
+        skill_id: The skill ID to start traversal from
+        skill_parent_map: Dictionary mapping skill IDs to their parent IDs
+        
+    Returns:
+        List of skill IDs in DFS order (includes the starting skill)
+        
+    Examples:
+        >>> # Single skill
+        >>> traverse_dfs(1, {1: None})
+        [1]
+        
+        >>> # Linear hierarchy: 1 -> 2 -> 3
+        >>> traverse_dfs(1, {1: None, 2: 1, 3: 2})
+        [1, 2, 3]
+        
+        >>> # Tree: 1 -> (2, 3), 2 -> 4
+        >>> result = traverse_dfs(1, {1: None, 2: 1, 3: 1, 4: 2})
+        >>> result[0]  # Always starts with root
+        1
+        >>> len(result)  # Contains all nodes
+        4
+    """
+    result: List[int] = []
+    
+    def _dfs_helper(current_id: int) -> None:
+        """Recursively perform DFS."""
+        # Visit current node
+        result.append(current_id)
+        
+        # Find and visit all children
+        children = [
+            child_id for child_id, parent_id in skill_parent_map.items()
+            if parent_id == current_id
+        ]
+        
+        # Sort children by ID for deterministic ordering
+        children.sort()
+        
+        for child_id in children:
+            _dfs_helper(child_id)
+    
+    _dfs_helper(skill_id)
+    return result
+
+
+def traverse_bfs(
+    skill_id: int,
+    skill_parent_map: Dict[int, Optional[int]]
+) -> List[int]:
+    """
+    Perform breadth-first search (BFS) traversal starting from a skill.
+    
+    Visits the skill, then visits all its immediate children, then all grandchildren,
+    and so on level by level. This means visiting all nodes at depth N before any at depth N+1.
+    
+    Args:
+        skill_id: The skill ID to start traversal from
+        skill_parent_map: Dictionary mapping skill IDs to their parent IDs
+        
+    Returns:
+        List of skill IDs in BFS order (includes the starting skill)
+        
+    Examples:
+        >>> # Single skill
+        >>> traverse_bfs(1, {1: None})
+        [1]
+        
+        >>> # Linear hierarchy: 1 -> 2 -> 3
+        >>> traverse_bfs(1, {1: None, 2: 1, 3: 2})
+        [1, 2, 3]
+        
+        >>> # Tree: 1 -> (2, 3), 2 -> 4
+        >>> result = traverse_bfs(1, {1: None, 2: 1, 3: 1, 4: 2})
+        >>> result[0]  # Always starts with root
+        1
+        >>> result[1:3]  # Next level (children of 1)
+        [2, 3]
+        >>> result[3]  # Last level (child of 2)
+        4
+    """
+    result: List[int] = []
+    queue: deque = deque([skill_id])
+    
+    while queue:
+        current_id = queue.popleft()
+        result.append(current_id)
+        
+        # Find all children of current node
+        children = [
+            child_id for child_id, parent_id in skill_parent_map.items()
+            if parent_id == current_id
+        ]
+        
+        # Sort children by ID for deterministic ordering
+        children.sort()
+        
+        # Add children to queue for processing
+        queue.extend(children)
+    
+    return result

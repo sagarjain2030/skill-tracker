@@ -4,6 +4,8 @@ from app.utils.validation import (
     validate_no_cycle,
     get_ancestors,
     get_descendants,
+    traverse_dfs,
+    traverse_bfs,
 )
 
 __all__ = [
@@ -11,5 +13,7 @@ __all__ = [
     "validate_no_cycle",
     "get_ancestors",
     "get_descendants",
+    "traverse_dfs",
+    "traverse_bfs",
 ]
 
