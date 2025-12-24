@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { counterService } from '../services/api';
 import './SkillNode.css';
 
 function SkillNode({ 
@@ -9,12 +10,16 @@ function SkillNode({
   onToggle, 
   onAddSubskill, 
   onUpdateSkill, 
-  onDeleteSkill 
+  onDeleteSkill,
+  onRefresh
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(skill.name);
   const [showAddChild, setShowAddChild] = useState(false);
   const [childName, setChildName] = useState('');
+  const [showAddCounter, setShowAddCounter] = useState(false);
+  const [counterForm, setCounterForm] = useState({ name: '', unit: '', value: 0, target: '' });
+  const [showCounters, setShowCounters] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const hasChildren = skill.children && skill.children.length > 0;
@@ -72,6 +77,55 @@ function SkillNode({
     }
   };
 
+  const handleAddCounter = async (e) => {
+    e.preventDefault();
+    if (!counterForm.name.trim()) return;
+
+    setLoading(true);
+    try {
+      await counterService.createCounter(skill.id, {
+        name: counterForm.name.trim(),
+        unit: counterForm.unit.trim() || null,
+        value: parseFloat(counterForm.value) || 0,
+        target: counterForm.target ? parseFloat(counterForm.target) : null
+      });
+      setCounterForm({ name: '', unit: '', value: 0, target: '' });
+      setShowAddCounter(false);
+      setShowCounters(true);
+      await onRefresh();
+    } catch (err) {
+      console.error('Error adding counter:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleIncrementCounter = async (counterId, amount = 1) => {
+    setLoading(true);
+    try {
+      await counterService.incrementCounter(counterId, amount);
+      await onRefresh();
+    } catch (err) {
+      console.error('Error incrementing counter:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteCounter = async (counterId) => {
+    if (!window.confirm('Delete this counter?')) return;
+
+    setLoading(true);
+    try {
+      await counterService.deleteCounter(counterId);
+      await onRefresh();
+    } catch (err) {
+      console.error('Error deleting counter:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="skill-node" style={{ '--level': level }}>
       <div className="node-header">
@@ -107,6 +161,14 @@ function SkillNode({
         </div>
 
         <div className="node-actions">
+          <button
+            className="action-btn counter-btn"
+            onClick={() => setShowCounters(!showCounters)}
+            disabled={loading}
+            title="View counters"
+          >
+            📊
+          </button>
           <button
             className="action-btn add-btn"
             onClick={() => setShowAddChild(!showAddChild)}
@@ -162,6 +224,173 @@ function SkillNode({
         </div>
       )}
 
+      {showCounters && (
+        <div className="counters-section">
+          <div className="counters-header">
+            <h4>Counters</h4>
+            <button
+              className="add-counter-btn"
+              onClick={() => setShowAddCounter(!showAddCounter)}
+              disabled={loading}
+            >
+              + Add Counter
+            </button>
+          </div>
+
+          {showAddCounter && (
+            <div className="add-counter-form">
+              <form onSubmit={handleAddCounter}>
+                <input
+                  type="text"
+                  value={counterForm.name}
+                  onChange={(e) => setCounterForm({...counterForm, name: e.target.value})}
+                  placeholder="Counter name (e.g., Hours)"
+                  disabled={loading}
+                  maxLength={255}
+                />
+                <input
+                  type="text"
+                  value={counterForm.unit}
+                  onChange={(e) => setCounterForm({...counterForm, unit: e.target.value})}
+                  placeholder="Unit (optional)"
+                  disabled={loading}
+                  maxLength={50}
+                />
+                <input
+                  type="number"
+                  step="0.1"
+                  value={counterForm.value}
+                  onChange={(e) => setCounterForm({...counterForm, value: e.target.value})}
+                  placeholder="Initial value"
+                  disabled={loading}
+                />
+                <input
+                  type="number"
+                  step="0.1"
+                  value={counterForm.target}
+                  onChange={(e) => setCounterForm({...counterForm, target: e.target.value})}
+                  placeholder="Target (optional)"
+                  disabled={loading}
+                />
+                <button type="submit" disabled={!counterForm.name.trim() || loading}>
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddCounter(false);
+                    setCounterForm({ name: '', unit: '', value: 0, target: '' });
+                  }}
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+              </form>
+            </div>
+          )}
+
+          {skill.counters && skill.counters.length > 0 && (
+            <div className="counters-list">
+              <h5>Direct Counters:</h5>
+              {skill.counters.map(counter => (
+                <div key={counter.id} className="counter-item">
+                  <div className="counter-info">
+                    <span className="counter-name">{counter.name}</span>
+                    <span className="counter-value">
+                      {counter.value.toFixed(1)} {counter.unit || ''}
+                      {counter.target && ` / ${counter.target}`}
+                    </span>
+                    {counter.target && (
+                      <div className="counter-progress">
+                        <div 
+                          className="progress-bar" 
+                          style={{width: `${Math.min((counter.value / counter.target) * 100, 100)}%`}}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="counter-actions">
+                    <button
+                      onClick={() => handleIncrementCounter(counter.id, 1)}
+                      disabled={loading}
+                      title="Increment by 1"
+                    >
+                      +1
+                    </button>
+                    <button
+                      onClick={() => handleIncrementCounter(counter.id, 0.5)}
+                      disabled={loading}
+                      title="Increment by 0.5"
+                    >
+                      +0.5
+                    </button>
+                    <button
+                      onClick={() => handleDeleteCounter(counter.id)}
+                      disabled={loading}
+                      className="delete-counter-btn"
+                      title="Delete counter"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {skill.accumulatedCounters && skill.accumulatedCounters.length > 0 && (
+            <div className="accumulated-counters">
+              <h5>Total (including children):</h5>
+              {skill.accumulatedCounters.map((counter, idx) => (
+                <div key={idx} className="accumulated-counter-item">
+                  <span className="counter-name">{counter.name}</span>
+                  <span className="counter-value accumulated">
+                    {counter.value.toFixed(1)} {counter.unit || ''}
+                    {counter.target && ` / ${counter.target}`}
+                  </span>
+                  {counter.target && (
+                    <div className="counter-progress">
+                      <div 
+                        className="progress-bar accumulated" 
+                        style={{width: `${Math.min((counter.value / counter.target) * 100, 100)}%`}}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {showAddChild && (
+        <div className="add-child-form">
+          <form onSubmit={handleAddChild}>
+            <input
+              type="text"
+              value={childName}
+              onChange={(e) => setChildName(e.target.value)}
+              placeholder="New subskill name..."
+              disabled={loading}
+              maxLength={255}
+            />
+            <button type="submit" disabled={!childName.trim() || loading}>
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddChild(false);
+                setChildName('');
+              }}
+              disabled={loading}
+            >
+              Cancel
+            </button>
+          </form>
+        </div>
+      )}
+
       {isExpanded && hasChildren && (
         <div className="node-children">
           {skill.children.map(child => (
@@ -175,6 +404,7 @@ function SkillNode({
               onAddSubskill={onAddSubskill}
               onUpdateSkill={onUpdateSkill}
               onDeleteSkill={onDeleteSkill}
+              onRefresh={onRefresh}
             />
           ))}
         </div>
