@@ -5,6 +5,7 @@ function SkillNode({
   skill, 
   level, 
   isExpanded, 
+  expandedNodes,
   onToggle, 
   onAddSubskill, 
   onUpdateSkill, 
@@ -168,7 +169,8 @@ function SkillNode({
               key={child.id}
               skill={child}
               level={level + 1}
-              isExpanded={false}
+              isExpanded={expandedNodes.has(child.id)}
+              expandedNodes={expandedNodes}
               onToggle={onToggle}
               onAddSubskill={onAddSubskill}
               onUpdateSkill={onUpdateSkill}

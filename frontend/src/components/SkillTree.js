@@ -56,6 +56,7 @@ function SkillTree({ skills, onAddSubskill, onUpdateSkill, onDeleteSkill }) {
             skill={skill}
             level={0}
             isExpanded={expandedNodes.has(skill.id)}
+            expandedNodes={expandedNodes}
             onToggle={toggleNode}
             onAddSubskill={onAddSubskill}
             onUpdateSkill={onUpdateSkill}
