@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from pathlib import Path
-from app.routers import skills
+from app.routers import skills, counters
 
 app = FastAPI(
     title="Skill Tracker API",
@@ -53,6 +53,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(skills.router, prefix="/api")
+app.include_router(counters.router, prefix="/api")
 
 # Mount static files for React frontend (if build directory exists)
 frontend_build_path = Path(__file__).parent.parent / "frontend" / "build"
