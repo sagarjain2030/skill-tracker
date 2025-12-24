@@ -6,6 +6,12 @@ from app.models.skill import (
     SkillUpdate,
     SkillWithChildren,
 )
+from app.models.counter import (
+    Counter,
+    CounterBase,
+    CounterCreate,
+    CounterUpdate,
+)
 
 __all__ = [
     "Skill",
@@ -13,4 +19,8 @@ __all__ = [
     "SkillCreate",
     "SkillUpdate",
     "SkillWithChildren",
+    "Counter",
+    "CounterBase",
+    "CounterCreate",
+    "CounterUpdate",
 ]
