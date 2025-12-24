@@ -131,8 +131,7 @@ function App() {
           }
           accumulated[key].value += data.value;
           accumulated[key].ids.push(...data.ids);
-        });  onRefresh={loadData}
-              
+        });
       });
 
       node.accumulatedCounters = Object.values(accumulated);
