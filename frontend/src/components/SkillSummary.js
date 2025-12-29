@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import skillService from '../services/api';
 import './SkillSummary.css';
 
@@ -7,11 +7,7 @@ function SkillSummary({ skillId, onClose }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    loadSummary();
-  }, [skillId]);
-
-  const loadSummary = async () => {
+  const loadSummary = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -23,7 +19,11 @@ function SkillSummary({ skillId, onClose }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [skillId]);
+
+  useEffect(() => {
+    loadSummary();
+  }, [loadSummary]);
 
   const renderCounterTotals = (counterTotals) => {
     if (!counterTotals || counterTotals.length === 0) {
