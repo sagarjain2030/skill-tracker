@@ -4,6 +4,7 @@ import './ImportExport.css';
 
 function ImportExport({ onImport }) {
   const fileInputRef = useRef(null);
+  const replaceInputRef = useRef(null);
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState(null);
@@ -87,7 +88,11 @@ function ImportExport({ onImport }) {
     }
   };
 
-  const handleReplaceAll = async (event) => {
+  const handleReplaceClick = () => {
+    replaceInputRef.current?.click();
+  };
+
+  const handleReplaceChange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -102,6 +107,16 @@ function ImportExport({ onImport }) {
       if (!Array.isArray(data)) {
         throw new Error('Invalid format: JSON must be an array of skill trees');
       }
+
+      // Validate each tree has required fields
+      data.forEach((tree, idx) => {
+        if (!tree.name) {
+          throw new Error(`Tree at index ${idx} missing 'name' field`);
+        }
+        if (!Array.isArray(tree.children)) {
+          throw new Error(`Tree at index ${idx} missing or invalid 'children' array`);
+        }
+      });
 
       const confirmed = window.confirm(
         '⚠️ WARNING: This will DELETE ALL existing skills and replace them.\n\n' +
@@ -123,8 +138,8 @@ function ImportExport({ onImport }) {
     } finally {
       setImporting(false);
       // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      if (replaceInputRef.current) {
+        replaceInputRef.current.value = '';
       }
     }
   };
@@ -150,11 +165,28 @@ function ImportExport({ onImport }) {
           {importing ? '⏳ Importing...' : '📤 Import'}
         </button>
 
+        <button
+          onClick={handleReplaceClick}
+          disabled={importing}
+          className="btn-replace"
+          title="⚠️ Replace ALL skills (deletes existing)"
+        >
+          {importing ? '⏳ Replacing...' : '🔄 Replace All'}
+        </button>
+
         <input
           ref={fileInputRef}
           type="file"
           accept=".json,application/json"
           onChange={handleFileChange}
+          style={{ display: 'none' }}
+        />
+
+        <input
+          ref={replaceInputRef}
+          type="file"
+          accept=".json,application/json"
+          onChange={handleReplaceChange}
           style={{ display: 'none' }}
         />
       </div>
@@ -166,7 +198,7 @@ function ImportExport({ onImport }) {
       )}
 
       <div className="import-export-hint">
-        💡 Export to backup, Import to restore or share skill trees
+        💡 Export to backup, Import to add skills, Replace All to restore from backup
       </div>
     </div>
   );
