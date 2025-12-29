@@ -151,7 +151,7 @@ def import_skill_tree(trees: List[SkillImportNode]) -> List[SkillExportNode]:
         HTTPException 409: If a root skill name already exists
     """
     global next_skill_id
-    from app.routers.counters import counters_db, next_counter_id, save_counters
+    from app.routers.counters import counters_db, save_counters
     
     result = []
     for tree in trees:
@@ -229,7 +229,7 @@ def update_skill_tree(trees: List[SkillImportNode]) -> List[SkillExportNode]:
         List of created trees with assigned IDs
     """
     global next_skill_id
-    from app.routers.counters import counters_db, next_counter_id, save_counters
+    from app.routers.counters import counters_db, save_counters
     
     # Clear all existing skills and counters
     skills_db.clear()
