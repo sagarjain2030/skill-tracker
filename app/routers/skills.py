@@ -632,9 +632,12 @@ def get_skill_summary(skill_id: int) -> SkillSummary:
         for counter in skill_counters:
             key = (counter.name, counter.unit or "")
             if key not in counter_aggregation:
-                counter_aggregation[key] = {"total": 0.0, "count": 0, "target": counter.target}
+                counter_aggregation[key] = {"total": 0.0, "count": 0, "target": 0.0}
             counter_aggregation[key]["total"] += counter.value
             counter_aggregation[key]["count"] += 1
+            # Aggregate targets - sum up all target values
+            if counter.target is not None:
+                counter_aggregation[key]["target"] += counter.target
     
     # Build counter summaries
     counter_totals = [
@@ -642,6 +645,7 @@ def get_skill_summary(skill_id: int) -> SkillSummary:
             name=name,
             unit=unit if unit else None,
             total=data["total"],
+            target=data["target"] if data["target"] > 0 else None,
             count=data["count"]
         )
         for (name, unit), data in counter_aggregation.items()

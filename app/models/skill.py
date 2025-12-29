@@ -43,6 +43,7 @@ class CounterSummary(BaseModel):
     name: str = Field(..., description="Counter name")
     unit: Optional[str] = Field(None, description="Counter unit")
     total: float = Field(..., description="Total counter value")
+    target: Optional[float] = Field(None, description="Total target value (sum of all targets)")
     count: int = Field(..., description="Number of counters aggregated")
 
 
