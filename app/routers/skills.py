@@ -3,8 +3,9 @@ from typing import Dict, List, Optional
 from fastapi import APIRouter, HTTPException, status
 from app.models.skill import (
     Skill, SkillCreate, SkillUpdate, SkillWithChildren, 
-    SkillSummary, CounterSummary, SkillImportNode, SkillExportNode
+    SkillSummary, CounterSummary, SkillImportNode, SkillExportNode, CounterExportData
 )
+from app.models.counter import Counter
 from app.utils.validation import validate_no_cycle, get_descendants, CyclicDependencyError
 from app.storage import load_skills, save_skills, get_next_skill_id
 
@@ -150,6 +151,7 @@ def import_skill_tree(trees: List[SkillImportNode]) -> List[SkillExportNode]:
         HTTPException 409: If a root skill name already exists
     """
     global next_skill_id
+    from app.routers.counters import counters_db, save_counters
     
     result = []
     for tree in trees:
@@ -157,6 +159,7 @@ def import_skill_tree(trees: List[SkillImportNode]) -> List[SkillExportNode]:
     
     # Save to storage
     save_skills(skills_db)
+    save_counters(counters_db)
     
     return result
 
@@ -172,6 +175,8 @@ def export_skill_tree() -> List[SkillExportNode]:
     Returns:
         List of root skill trees with nested children
     """
+    from app.routers.counters import counters_db
+    
     def export_node(skill_id: int) -> SkillExportNode:
         """Recursively export a skill node and its children."""
         skill = skills_db[skill_id]
@@ -183,9 +188,22 @@ def export_skill_tree() -> List[SkillExportNode]:
             if child_skill.parent_id == skill_id
         ]
         
+        # Get counters for this skill
+        skill_counters = [
+            CounterExportData(
+                name=counter.name,
+                unit=counter.unit,
+                value=counter.value,
+                target=counter.target
+            )
+            for counter_id, counter in counters_db.items()
+            if counter.skill_id == skill_id
+        ]
+        
         return SkillExportNode(
             id=skill.id,
             name=skill.name,
+            counters=skill_counters,
             children=children
         )
     
@@ -211,10 +229,15 @@ def update_skill_tree(trees: List[SkillImportNode]) -> List[SkillExportNode]:
         List of created trees with assigned IDs
     """
     global next_skill_id
+    from app.routers.counters import counters_db, save_counters
     
-    # Clear all existing skills
+    # Clear all existing skills and counters
     skills_db.clear()
+    counters_db.clear()
     next_skill_id = 1
+    # Note: We need to reset next_counter_id in the counters module
+    import app.routers.counters as counters_module
+    counters_module.next_counter_id = 1
     
     # Import all trees
     result = []
@@ -223,6 +246,7 @@ def update_skill_tree(trees: List[SkillImportNode]) -> List[SkillExportNode]:
     
     # Save to storage
     save_skills(skills_db)
+    save_counters(counters_db)
     
     return result
 
@@ -230,6 +254,8 @@ def update_skill_tree(trees: List[SkillImportNode]) -> List[SkillExportNode]:
 def _import_tree_node(node: SkillImportNode, parent_id: Optional[int]) -> SkillExportNode:
     """Recursively import a skill node and its children."""
     global next_skill_id
+    from app.routers.counters import counters_db
+    import app.routers.counters as counters_module
     
     # Validate unique root name
     if parent_id is None:
@@ -242,14 +268,37 @@ def _import_tree_node(node: SkillImportNode, parent_id: Optional[int]) -> SkillE
         parent_id=parent_id
     )
     skills_db[skill.id] = skill
+    skill_id = skill.id
     next_skill_id += 1
     
+    # Create counters for this skill
+    counter_exports = []
+    for counter_data in node.counters:
+        counter = Counter(
+            id=counters_module.next_counter_id,
+            skill_id=skill_id,
+            name=counter_data.get("name", ""),
+            unit=counter_data.get("unit"),
+            value=float(counter_data.get("value", 0)),
+            target=float(counter_data["target"]) if counter_data.get("target") is not None else None
+        )
+        counters_db[counter.id] = counter
+        counters_module.next_counter_id += 1
+        
+        counter_exports.append(CounterExportData(
+            name=counter.name,
+            unit=counter.unit,
+            value=counter.value,
+            target=counter.target
+        ))
+    
     # Recursively import children
-    children_exports = [_import_tree_node(child, skill.id) for child in node.children]
+    children_exports = [_import_tree_node(child, skill_id) for child in node.children]
     
     return SkillExportNode(
-        id=skill.id,
+        id=skill_id,
         name=skill.name,
+        counters=counter_exports,
         children=children_exports
     )
 

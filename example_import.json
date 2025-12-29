@@ -1,41 +1,91 @@
 [
   {
     "name": "Programming",
+    "counters": [
+      {"name": "Progress", "value": 45, "target": 100, "unit": "%"}
+    ],
     "children": [
       {
         "name": "Backend",
+        "counters": [],
         "children": [
           {
             "name": "Python",
+            "counters": [
+              {"name": "Hours", "value": 120, "target": 200, "unit": "hrs"},
+              {"name": "Projects", "value": 5, "target": 10, "unit": null}
+            ],
             "children": [
-              {"name": "FastAPI", "children": []},
-              {"name": "Django", "children": []}
+              {
+                "name": "FastAPI",
+                "counters": [
+                  {"name": "Videos", "value": 15, "target": 25, "unit": null}
+                ],
+                "children": []
+              },
+              {
+                "name": "Django",
+                "counters": [],
+                "children": []
+              }
             ]
           },
           {
             "name": "Node.js",
+            "counters": [
+              {"name": "Hours", "value": 80, "target": 150, "unit": "hrs"}
+            ],
             "children": [
-              {"name": "Express", "children": []},
-              {"name": "NestJS", "children": []}
+              {
+                "name": "Express",
+                "counters": [],
+                "children": []
+              },
+              {
+                "name": "NestJS",
+                "counters": [],
+                "children": []
+              }
             ]
           }
         ]
       },
       {
         "name": "Frontend",
+        "counters": [],
         "children": [
           {
             "name": "React",
+            "counters": [
+              {"name": "Components Built", "value": 42, "target": 100, "unit": null}
+            ],
             "children": [
-              {"name": "Hooks", "children": []},
-              {"name": "Redux", "children": []}
+              {
+                "name": "Hooks",
+                "counters": [],
+                "children": []
+              },
+              {
+                "name": "Redux",
+                "counters": [],
+                "children": []
+              }
             ]
           },
           {
             "name": "Vue",
+            "counters": [],
             "children": [
-              {"name": "Vuex", "children": []},
-              {"name": "Composition API", "children": []}
+              {
+                "name": "Vuex",
+                "counters": [],
+                "children": []
+              },
+              {
+                "name": "Composition API",
+                "counters": [],
+                "children": []
+              }
             ]
           }
         ]
@@ -44,19 +94,41 @@
   },
   {
     "name": "Design",
+    "counters": [
+      {"name": "Designs Created", "value": 12, "target": 30, "unit": null}
+    ],
     "children": [
       {
         "name": "UI/UX",
+        "counters": [],
+        "counters": [],
         "children": [
-          {"name": "Figma", "children": []},
-          {"name": "Adobe XD", "children": []}
+          {
+            "name": "Figma",
+            "counters": [],
+            "children": []
+          },
+          {
+            "name": "Adobe XD",
+            "counters": [],
+            "children": []
+          }
         ]
       },
       {
         "name": "Graphics",
+        "counters": [],
         "children": [
-          {"name": "Photoshop", "children": []},
-          {"name": "Illustrator", "children": []}
+          {
+            "name": "Photoshop",
+            "counters": [],
+            "children": []
+          },
+          {
+            "name": "Illustrator",
+            "counters": [],
+            "children": []
+          }
         ]
       }
     ]

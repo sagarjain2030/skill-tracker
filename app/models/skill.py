@@ -57,16 +57,26 @@ class SkillSummary(Skill):
 
 
 class SkillImportNode(BaseModel):
-    """Schema for importing a skill node with optional children."""
+    """Schema for importing a skill node with optional children and counters."""
     name: str = Field(..., min_length=1, max_length=255, description="Skill name")
     children: List["SkillImportNode"] = Field(default_factory=list, description="Child skills")
+    counters: List[dict] = Field(default_factory=list, description="Counter data for this skill")
+
+
+class CounterExportData(BaseModel):
+    """Counter data for export."""
+    name: str = Field(..., description="Counter name")
+    unit: Optional[str] = Field(None, description="Counter unit")
+    value: float = Field(..., description="Counter value")
+    target: Optional[float] = Field(None, description="Counter target")
 
 
 class SkillExportNode(BaseModel):
-    """Schema for exporting a skill node with ID and optional children."""
+    """Schema for exporting a skill node with ID, counters, and optional children."""
     id: int = Field(..., description="Skill ID")
     name: str = Field(..., description="Skill name")
     children: List["SkillExportNode"] = Field(default_factory=list, description="Child skills")
+    counters: List[CounterExportData] = Field(default_factory=list, description="Counters for this skill")
 
 
 # Required for forward reference resolution
