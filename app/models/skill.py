@@ -1,5 +1,5 @@
 """Skill model definition for hierarchical skill tree."""
-from typing import Optional, List, Dict
+from typing import Optional, List
 from pydantic import BaseModel, ConfigDict, Field
 
 

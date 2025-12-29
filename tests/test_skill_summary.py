@@ -87,6 +87,7 @@ class TestGetSkillSummary:
         # Create children
         child1 = client.post(f"/api/skills/{parent['id']}/children", json={"name": "Python"}).json()
         child2 = client.post(f"/api/skills/{parent['id']}/children", json={"name": "JavaScript"}).json()
+        print(child1, child2)
         
         # Get summary
         response = client.get(f"/api/skills/{parent['id']}/summary")
