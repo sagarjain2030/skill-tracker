@@ -1,7 +1,7 @@
 """Skills API router."""
 from typing import Dict, List
 from fastapi import APIRouter, HTTPException, status
-from app.models.skill import Skill, SkillCreate, SkillUpdate, SkillWithChildren
+from app.models.skill import Skill, SkillCreate, SkillUpdate, SkillWithChildren, SkillSummary, CounterSummary
 from app.utils.validation import validate_no_cycle, get_descendants, CyclicDependencyError
 from app.storage import load_skills, save_skills, get_next_skill_id
 
@@ -380,3 +380,81 @@ def delete_skill(skill_id: int) -> None:
     
     # Return None for 204 No Content
     return None
+
+
+@router.get("/{skill_id}/summary", response_model=SkillSummary)
+def get_skill_summary(skill_id: int) -> SkillSummary:
+    """
+    Get a comprehensive summary of a skill including aggregated counter data and children.
+    
+    This endpoint provides:
+    - Skill basic information (id, name, parent_id)
+    - Aggregated counter totals (sum of all counters with same name+unit across this skill and descendants)
+    - Child count and total descendants count
+    - Recursive children summaries
+    
+    Args:
+        skill_id: The ID of the skill to summarize
+        
+    Returns:
+        SkillSummary with aggregated data
+        
+    Raises:
+        HTTPException 404: If skill not found
+    """
+    from app.routers.counters import counters_db
+    
+    if skill_id not in skills_db:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Skill with id {skill_id} not found"
+        )
+    
+    skill = skills_db[skill_id]
+    
+    # Get descendants
+    skill_parent_map = {sid: s.parent_id for sid, s in skills_db.items()}
+    descendants = get_descendants(skill_id, skill_parent_map)
+    
+    # Get direct children
+    direct_children = [s for s in skills_db.values() if s.parent_id == skill_id]
+    
+    # Aggregate counters from this skill and all descendants
+    counter_aggregation: Dict[tuple, Dict] = {}  # Key: (name, unit), Value: {total, count, target}
+    
+    # Include this skill and all descendants
+    skill_ids_to_aggregate = {skill_id} | descendants
+    
+    for sid in skill_ids_to_aggregate:
+        skill_counters = [c for c in counters_db.values() if c.skill_id == sid]
+        for counter in skill_counters:
+            key = (counter.name, counter.unit or "")
+            if key not in counter_aggregation:
+                counter_aggregation[key] = {"total": 0.0, "count": 0, "target": counter.target}
+            counter_aggregation[key]["total"] += counter.value
+            counter_aggregation[key]["count"] += 1
+    
+    # Build counter summaries
+    counter_totals = [
+        CounterSummary(
+            name=name,
+            unit=unit if unit else None,
+            total=data["total"],
+            count=data["count"]
+        )
+        for (name, unit), data in counter_aggregation.items()
+    ]
+    
+    # Build child summaries recursively
+    children_summaries = [get_skill_summary(child.id) for child in direct_children]
+    
+    return SkillSummary(
+        id=skill.id,
+        name=skill.name,
+        parent_id=skill.parent_id,
+        counter_totals=counter_totals,
+        total_descendants=len(descendants),
+        direct_children_count=len(direct_children),
+        children=children_summaries
+    )
+

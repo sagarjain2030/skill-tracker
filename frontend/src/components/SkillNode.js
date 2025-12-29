@@ -11,7 +11,8 @@ function SkillNode({
   onAddSubskill, 
   onUpdateSkill, 
   onDeleteSkill,
-  onRefresh
+  onRefresh,
+  onViewSummary
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(skill.name);
@@ -161,6 +162,14 @@ function SkillNode({
         </div>
 
         <div className="node-actions">
+          <button
+            className="action-btn summary-btn"
+            onClick={() => onViewSummary && onViewSummary(skill.id)}
+            disabled={loading}
+            title="View skill summary"
+          >
+            📋
+          </button>
           <button
             className="action-btn counter-btn"
             onClick={() => setShowCounters(!showCounters)}
@@ -381,6 +390,7 @@ function SkillNode({
             <SkillNode
               key={child.id}
               skill={child}
+              onViewSummary={onViewSummary}
               level={level + 1}
               isExpanded={expandedNodes.has(child.id)}
               expandedNodes={expandedNodes}

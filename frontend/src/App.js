@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import skillService, { counterService } from './services/api';
 import SkillTree from './components/SkillTree';
 import AddSkillForm from './components/AddSkillForm';
+import SkillSummary from './components/SkillSummary';
 import './App.css';
 
 function App() {
@@ -9,6 +10,8 @@ function App() {
   const [counters, setCounters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedSkillId, setSelectedSkillId] = useState(null);
+  const [showSummary, setShowSummary] = useState(false);
 
   // Load skills and counters on mount
   useEffect(() => {
@@ -87,6 +90,16 @@ function App() {
       setError(err.response?.data?.detail || 'Failed to clear data');
       throw err;
     }
+  };
+
+  const handleViewSummary = (skillId) => {
+    setSelectedSkillId(skillId);
+    setShowSummary(true);
+  };
+
+  const handleCloseSummary = () => {
+    setShowSummary(false);
+    setSelectedSkillId(null);
   };
 
   // Build tree structure from flat list with counters
@@ -202,10 +215,25 @@ function App() {
                 onAddSubskill={handleAddSubskill}
                 onUpdateSkill={handleUpdateSkill}
                 onDeleteSkill={handleDeleteSkill}
+                onRefresh={loadData}
+                onViewSummary={handleViewSummary}
               />
             )}
           </div>
         </div>
+
+        {showSummary && selectedSkillId && (
+          <>
+            <div 
+              className="summary-overlay" 
+              onClick={handleCloseSummary}
+            />
+            <SkillSummary 
+              skillId={selectedSkillId} 
+              onClose={handleCloseSummary}
+            />
+          </>
+        )}
       </main>
 
       <footer className="App-footer">

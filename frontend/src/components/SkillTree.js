@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import SkillNode from './SkillNode';
 import './SkillTree.css';
 
-function SkillTree({ skills, onAddSubskill, onUpdateSkill, onDeleteSkill, onRefresh }) {
+function SkillTree({ skills, onAddSubskill, onUpdateSkill, onDeleteSkill, onRefresh, onViewSummary }) {
   const [expandedNodes, setExpandedNodes] = useState(new Set());
 
   const toggleNode = (id) => {
@@ -62,6 +62,7 @@ function SkillTree({ skills, onAddSubskill, onUpdateSkill, onDeleteSkill, onRefr
             onUpdateSkill={onUpdateSkill}
             onDeleteSkill={onDeleteSkill}
             onRefresh={onRefresh}
+            onViewSummary={onViewSummary}
           />
         ))}
       </div>

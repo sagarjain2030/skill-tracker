@@ -138,6 +138,16 @@
   color: white;
 }
 
+.summary-btn {
+  background: #e3f2fd;
+  color: #2196f3;
+}
+
+.summary-btn:hover:not(:disabled) {
+  background: #2196f3;
+  color: white;
+}
+
 .counter-badge {
   position: absolute;
   top: -4px;

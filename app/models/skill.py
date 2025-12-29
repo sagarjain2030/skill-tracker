@@ -1,5 +1,5 @@
 """Skill model definition for hierarchical skill tree."""
-from typing import Optional
+from typing import Optional, List, Dict
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -36,3 +36,25 @@ class SkillWithChildren(Skill):
 
 # Required for forward reference resolution
 SkillWithChildren.model_rebuild()
+
+
+class CounterSummary(BaseModel):
+    """Summary of counter values."""
+    name: str = Field(..., description="Counter name")
+    unit: Optional[str] = Field(None, description="Counter unit")
+    total: float = Field(..., description="Total counter value")
+    count: int = Field(..., description="Number of counters aggregated")
+
+
+class SkillSummary(Skill):
+    """Skill with aggregated counter summaries and child information."""
+    counter_totals: List[CounterSummary] = Field(default_factory=list, description="Aggregated counter values")
+    total_descendants: int = Field(0, description="Total number of descendants")
+    direct_children_count: int = Field(0, description="Number of direct children")
+    children: List["SkillSummary"] = Field(default_factory=list, description="Child skill summaries")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Required for forward reference resolution
+SkillSummary.model_rebuild()
