@@ -356,3 +356,239 @@ class TestGetSkillSummary:
         for child in summary["children"]:
             assert child["direct_children_count"] == 2
             assert len(child["children"]) == 2
+
+
+class TestCounterTargetAggregation:
+    """Tests for counter target aggregation in summaries."""
+
+    def test_summary_aggregates_targets_from_children(self):
+        """Test that summary aggregates target values from parent and all children."""
+        # Create hierarchy: Programming > Python > Django
+        parent = client.post("/api/skills/", json={"name": "Programming"}).json()
+        child = client.post(f"/api/skills/{parent['id']}/children", json={"name": "Python"}).json()
+        grandchild = client.post(f"/api/skills/{child['id']}/children", json={"name": "Django"}).json()
+        
+        # Add counters with targets at different levels
+        client.post(f"/api/counters/?skill_id={parent['id']}", json={
+            "name": "Videos",
+            "value": 5.0,
+            "target": 20.0
+        })
+        client.post(f"/api/counters/?skill_id={child['id']}", json={
+            "name": "Videos",
+            "value": 10.0,
+            "target": 50.0
+        })
+        client.post(f"/api/counters/?skill_id={grandchild['id']}", json={
+            "name": "Videos",
+            "value": 3.5,
+            "target": 30.0
+        })
+        
+        # Get parent summary
+        response = client.get(f"/api/skills/{parent['id']}/summary")
+        assert response.status_code == 200
+        
+        summary = response.json()
+        assert len(summary["counter_totals"]) == 1
+        
+        videos = summary["counter_totals"][0]
+        assert videos["name"] == "Videos"
+        assert videos["total"] == 18.5  # 5 + 10 + 3.5
+        assert videos["target"] == 100.0  # 20 + 50 + 30
+        assert videos["count"] == 3
+
+    def test_summary_aggregates_targets_across_siblings(self):
+        """Test that targets are summed across sibling skills."""
+        # Create hierarchy with multiple children
+        parent = client.post("/api/skills/", json={"name": "AWS Course"}).json()
+        section1 = client.post(f"/api/skills/{parent['id']}/children", json={"name": "Section 1"}).json()
+        section2 = client.post(f"/api/skills/{parent['id']}/children", json={"name": "Section 2"}).json()
+        section3 = client.post(f"/api/skills/{parent['id']}/children", json={"name": "Section 3"}).json()
+        
+        # Add counters to each section
+        client.post(f"/api/counters/?skill_id={section1['id']}", json={
+            "name": "Videos",
+            "value": 0,
+            "target": 50
+        })
+        client.post(f"/api/counters/?skill_id={section2['id']}", json={
+            "name": "Videos",
+            "value": 0,
+            "target": 100
+        })
+        client.post(f"/api/counters/?skill_id={section3['id']}", json={
+            "name": "Videos",
+            "value": 0,
+            "target": 119
+        })
+        
+        # Get parent summary
+        response = client.get(f"/api/skills/{parent['id']}/summary")
+        summary = response.json()
+        
+        videos = summary["counter_totals"][0]
+        assert videos["name"] == "Videos"
+        assert videos["total"] == 0
+        assert videos["target"] == 269  # 50 + 100 + 119
+        assert videos["count"] == 3
+
+    def test_summary_multiple_counter_types_with_targets(self):
+        """Test aggregation of multiple counter types with different targets."""
+        parent = client.post("/api/skills/", json={"name": "Course"}).json()
+        child1 = client.post(f"/api/skills/{parent['id']}/children", json={"name": "Module 1"}).json()
+        child2 = client.post(f"/api/skills/{parent['id']}/children", json={"name": "Module 2"}).json()
+        
+        # Add various counter types with targets
+        client.post(f"/api/counters/?skill_id={child1['id']}", json={
+            "name": "Videos",
+            "value": 5,
+            "target": 50
+        })
+        client.post(f"/api/counters/?skill_id={child1['id']}", json={
+            "name": "Quizzes",
+            "value": 2,
+            "target": 10
+        })
+        client.post(f"/api/counters/?skill_id={child1['id']}", json={
+            "name": "Duration",
+            "unit": "Mins",
+            "value": 120,
+            "target": 300
+        })
+        client.post(f"/api/counters/?skill_id={child2['id']}", json={
+            "name": "Videos",
+            "value": 8,
+            "target": 40
+        })
+        client.post(f"/api/counters/?skill_id={child2['id']}", json={
+            "name": "Quizzes",
+            "value": 1,
+            "target": 8
+        })
+        client.post(f"/api/counters/?skill_id={child2['id']}", json={
+            "name": "Duration",
+            "unit": "Mins",
+            "value": 200,
+            "target": 400
+        })
+        
+        # Get parent summary
+        response = client.get(f"/api/skills/{parent['id']}/summary")
+        summary = response.json()
+        
+        assert len(summary["counter_totals"]) == 3
+        
+        videos = next(c for c in summary["counter_totals"] if c["name"] == "Videos")
+        assert videos["total"] == 13  # 5 + 8
+        assert videos["target"] == 90  # 50 + 40
+        assert videos["count"] == 2
+        
+        quizzes = next(c for c in summary["counter_totals"] if c["name"] == "Quizzes")
+        assert quizzes["total"] == 3  # 2 + 1
+        assert quizzes["target"] == 18  # 10 + 8
+        assert quizzes["count"] == 2
+        
+        duration = next(c for c in summary["counter_totals"] if c["name"] == "Duration")
+        assert duration["total"] == 320  # 120 + 200
+        assert duration["target"] == 700  # 300 + 400
+        assert duration["unit"] == "Mins"
+        assert duration["count"] == 2
+
+    def test_summary_counters_with_null_targets(self):
+        """Test that counters with null targets are handled correctly."""
+        parent = client.post("/api/skills/", json={"name": "Parent"}).json()
+        child1 = client.post(f"/api/skills/{parent['id']}/children", json={"name": "Child1"}).json()
+        child2 = client.post(f"/api/skills/{parent['id']}/children", json={"name": "Child2"}).json()
+        
+        # One with target, one without
+        client.post(f"/api/counters/?skill_id={child1['id']}", json={
+            "name": "Projects",
+            "value": 5,
+            "target": 10
+        })
+        client.post(f"/api/counters/?skill_id={child2['id']}", json={
+            "name": "Projects",
+            "value": 3,
+            "target": None
+        })
+        
+        response = client.get(f"/api/skills/{parent['id']}/summary")
+        summary = response.json()
+        
+        projects = summary["counter_totals"][0]
+        assert projects["total"] == 8  # 5 + 3
+        assert projects["target"] == 10  # Only child1's target
+        assert projects["count"] == 2
+
+    def test_summary_all_null_targets_returns_none(self):
+        """Test that when all targets are null, aggregated target is None."""
+        parent = client.post("/api/skills/", json={"name": "Parent"}).json()
+        child1 = client.post(f"/api/skills/{parent['id']}/children", json={"name": "Child1"}).json()
+        child2 = client.post(f"/api/skills/{parent['id']}/children", json={"name": "Child2"}).json()
+        
+        # Both without targets
+        client.post(f"/api/counters/?skill_id={child1['id']}", json={
+            "name": "Notes",
+            "value": 5
+        })
+        client.post(f"/api/counters/?skill_id={child2['id']}", json={
+            "name": "Notes",
+            "value": 3
+        })
+        
+        response = client.get(f"/api/skills/{parent['id']}/summary")
+        summary = response.json()
+        
+        notes = summary["counter_totals"][0]
+        assert notes["total"] == 8
+        assert notes["target"] is None
+        assert notes["count"] == 2
+
+    def test_summary_deep_hierarchy_target_aggregation(self):
+        """Test target aggregation works correctly in deep hierarchies."""
+        # Create deep hierarchy: Root > L1 > L2 > L3
+        root = client.post("/api/skills/", json={"name": "Root"}).json()
+        l1 = client.post(f"/api/skills/{root['id']}/children", json={"name": "Level1"}).json()
+        l2 = client.post(f"/api/skills/{l1['id']}/children", json={"name": "Level2"}).json()
+        l3 = client.post(f"/api/skills/{l2['id']}/children", json={"name": "Level3"}).json()
+        
+        # Add counters at each level
+        client.post(f"/api/counters/?skill_id={root['id']}", json={
+            "name": "Sections",
+            "value": 1,
+            "target": 5
+        })
+        client.post(f"/api/counters/?skill_id={l1['id']}", json={
+            "name": "Sections",
+            "value": 2,
+            "target": 8
+        })
+        client.post(f"/api/counters/?skill_id={l2['id']}", json={
+            "name": "Sections",
+            "value": 0,
+            "target": 6
+        })
+        client.post(f"/api/counters/?skill_id={l3['id']}", json={
+            "name": "Sections",
+            "value": 0,
+            "target": 4
+        })
+        
+        # Get root summary - should aggregate all
+        response = client.get(f"/api/skills/{root['id']}/summary")
+        summary = response.json()
+        
+        sections = summary["counter_totals"][0]
+        assert sections["total"] == 3  # 1 + 2 + 0 + 0
+        assert sections["target"] == 23  # 5 + 8 + 6 + 4
+        assert sections["count"] == 4
+        
+        # Get L1 summary - should not include root's counter
+        response_l1 = client.get(f"/api/skills/{l1['id']}/summary")
+        summary_l1 = response_l1.json()
+        
+        sections_l1 = summary_l1["counter_totals"][0]
+        assert sections_l1["total"] == 2  # 2 + 0 + 0
+        assert sections_l1["target"] == 18  # 8 + 6 + 4 (no root's 5)
+        assert sections_l1["count"] == 3
