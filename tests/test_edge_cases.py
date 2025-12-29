@@ -1,6 +1,5 @@
 """Additional tests for remaining uncovered lines."""
 import pytest
-from pathlib import Path
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from app.main import app
@@ -41,7 +40,7 @@ class TestMainAppRoutes:
                 # Make a request to root
                 try:
                     client.get("/")
-                except:
+                except Exception:
                     # It's okay if this fails, we're just testing the code path
                     pass
 

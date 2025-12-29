@@ -336,7 +336,7 @@ class TestExportSkillTree:
         a = client.post("/api/skills/", json={"name": "A"}).json()
         b = client.post(f"/api/skills/{a['id']}/children", json={"name": "B"}).json()
         c = client.post(f"/api/skills/{b['id']}/children", json={"name": "C"}).json()
-        d = client.post(f"/api/skills/{c['id']}/children", json={"name": "D"}).json()
+        client.post(f"/api/skills/{c['id']}/children", json={"name": "D"})
         
         response = client.get("/api/skills/export")
         
@@ -504,7 +504,7 @@ class TestImportExportRoundTrip:
         # Create initial tree
         root = client.post("/api/skills/", json={"name": "Root"}).json()
         child1 = client.post(f"/api/skills/{root['id']}/children", json={"name": "Child1"}).json()
-        child2 = client.post(f"/api/skills/{root['id']}/children", json={"name": "Child2"}).json()
+        client.post(f"/api/skills/{root['id']}/children", json={"name": "Child2"})
         client.post(f"/api/skills/{child1['id']}/children", json={"name": "Grandchild"})
         
         # Export
