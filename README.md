@@ -67,14 +67,30 @@ Frontend runs on: http://localhost:3000
 - **Story-1.2.2** ✅ Create subskill
 - **Story-1.2.3** ✅ Update skill metadata
 - **Story-1.2.4** ✅ Delete skill subtree
+- **Story-2.1.1** ✅ Full skill tree endpoint
+- **Story-2.1.2** ✅ Skill subtree endpoint
+- **Story-2.2.1** ✅ DFS traversal utility
+- **Story-2.2.2** ✅ BFS traversal utility
+- **Feature-3.1** ✅ Counter model definition
+- **Feature-3.2** ✅ Counter CRUD API
+- **Story-5.1.1** ✅ Skill summary endpoint
 
 #### API Endpoints:
 - `POST /api/skills/` - Create root skill
 - `POST /api/skills/{parent_id}/children` - Create subskill
 - `GET /api/skills/` - List all skills
 - `GET /api/skills/{id}` - Get skill by ID
+- `GET /api/skills/tree` - Get full skill tree with nested children
+- `GET /api/skills/{id}/tree` - Get skill subtree with nested children
+- `GET /api/skills/{id}/summary` - Get skill summary with aggregated counters and descendants
 - `PATCH /api/skills/{id}` - Update skill (name, parent_id)
 - `DELETE /api/skills/{id}` - Delete skill and entire subtree
+- `POST /api/counters/?skill_id={id}` - Create counter for a skill
+- `GET /api/counters/` - List all counters (optional filter by skill_id)
+- `GET /api/counters/{id}` - Get counter by ID
+- `PATCH /api/counters/{id}` - Update counter
+- `POST /api/counters/{id}/increment?amount={value}` - Increment/decrement counter
+- `DELETE /api/counters/{id}` - Delete counter
 
 #### Frontend Features:
 - ✅ View hierarchical skill tree
@@ -83,6 +99,8 @@ Frontend runs on: http://localhost:3000
 - ✅ Update skill names (inline editing)
 - ✅ Delete skills with cascading delete
 - ✅ Expand/collapse tree nodes
+- ✅ Counter management (create, increment, delete)
+- ✅ Accumulated counter display (aggregates from children)
 - ✅ Beautiful gradient UI
 
 ### 🚧 Upcoming Milestones
@@ -97,7 +115,7 @@ Frontend runs on: http://localhost:3000
 pytest tests/ -v
 ```
 
-All 93 tests passing ✅
+All 182 tests passing ✅
 
 ## Development
 

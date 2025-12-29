@@ -43,6 +43,12 @@ const skillService = {
   // Delete a skill (and its subtree)
   deleteSkill: async (id) => {
     await axios.delete(`${API_BASE_URL}/skills/${id}`);
+  },
+
+  // Get skill summary with aggregated counters
+  getSkillSummary: async (id) => {
+    const response = await axios.get(`${API_BASE_URL}/skills/${id}/summary`);
+    return response.data;
   }
 };
 

@@ -130,6 +130,17 @@
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
 }
 
+.summary-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  backdrop-filter: blur(2px);
+}
+
 @media (max-width: 968px) {
   .content-container {
     grid-template-columns: 1fr;
