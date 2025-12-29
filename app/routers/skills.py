@@ -1,7 +1,10 @@
 """Skills API router."""
-from typing import Dict, List
+from typing import Dict, List, Optional
 from fastapi import APIRouter, HTTPException, status
-from app.models.skill import Skill, SkillCreate, SkillUpdate, SkillWithChildren, SkillSummary, CounterSummary
+from app.models.skill import (
+    Skill, SkillCreate, SkillUpdate, SkillWithChildren, 
+    SkillSummary, CounterSummary, SkillImportNode, SkillExportNode
+)
 from app.utils.validation import validate_no_cycle, get_descendants, CyclicDependencyError
 from app.storage import load_skills, save_skills, get_next_skill_id
 
@@ -127,6 +130,128 @@ def get_skill_tree() -> List[SkillWithChildren]:
     
     # Build tree for each root
     return [build_skill_tree(root_id) for root_id in root_ids]
+
+
+@router.post("/import", response_model=List[SkillExportNode], status_code=status.HTTP_201_CREATED)
+def import_skill_tree(trees: List[SkillImportNode]) -> List[SkillExportNode]:
+    """
+    Import one or more skill trees from JSON.
+    
+    Creates entire skill hierarchies from JSON structure. Each tree is created as
+    a separate root skill with its nested children.
+    
+    Args:
+        trees: List of skill trees to import (each becomes a root skill)
+        
+    Returns:
+        List of created trees with assigned IDs
+        
+    Raises:
+        HTTPException 409: If a root skill name already exists
+    """
+    global next_skill_id
+    
+    result = []
+    for tree in trees:
+        result.append(_import_tree_node(tree, None))
+    
+    # Save to storage
+    save_skills(skills_db)
+    
+    return result
+
+
+@router.get("/export", response_model=List[SkillExportNode])
+def export_skill_tree() -> List[SkillExportNode]:
+    """
+    Export all skill trees as JSON.
+    
+    Returns the complete skill hierarchy as a list of root skills with
+    nested children. Can be used for backup or sharing skill trees.
+    
+    Returns:
+        List of root skill trees with nested children
+    """
+    def export_node(skill_id: int) -> SkillExportNode:
+        """Recursively export a skill node and its children."""
+        skill = skills_db[skill_id]
+        
+        # Find children
+        children = [
+            export_node(child_id) 
+            for child_id, child_skill in skills_db.items() 
+            if child_skill.parent_id == skill_id
+        ]
+        
+        return SkillExportNode(
+            id=skill.id,
+            name=skill.name,
+            children=children
+        )
+    
+    # Find all root skills
+    root_ids = [skill_id for skill_id, skill in skills_db.items() if skill.parent_id is None]
+    
+    # Export each root tree
+    return [export_node(root_id) for root_id in root_ids]
+
+
+@router.put("/import", response_model=List[SkillExportNode])
+def update_skill_tree(trees: List[SkillImportNode]) -> List[SkillExportNode]:
+    """
+    Update/replace all skill trees with imported JSON.
+    
+    WARNING: This clears all existing skills and replaces them with the imported trees.
+    Use this for restoring backups or complete tree replacements.
+    
+    Args:
+        trees: List of skill trees to import (replaces all existing skills)
+        
+    Returns:
+        List of created trees with assigned IDs
+    """
+    global next_skill_id
+    
+    # Clear all existing skills
+    skills_db.clear()
+    next_skill_id = 1
+    
+    # Import all trees
+    result = []
+    for tree in trees:
+        result.append(_import_tree_node(tree, None))
+    
+    # Save to storage
+    save_skills(skills_db)
+    
+    return result
+
+
+def _import_tree_node(node: SkillImportNode, parent_id: Optional[int]) -> SkillExportNode:
+    """Recursively import a skill node and its children."""
+    global next_skill_id
+    
+    # Validate unique root name
+    if parent_id is None:
+        _validate_unique_root_name(node.name)
+    
+    # Create skill
+    skill = Skill(
+        id=next_skill_id,
+        name=node.name,
+        parent_id=parent_id
+    )
+    skills_db[skill.id] = skill
+    next_skill_id += 1
+    
+    # Recursively import children
+    children_exports = [_import_tree_node(child, skill.id) for child in node.children]
+    
+    return SkillExportNode(
+        id=skill.id,
+        name=skill.name,
+        children=children_exports
+    )
 
 
 @router.get("/{skill_id}", response_model=Skill)
@@ -380,6 +505,34 @@ def delete_skill(skill_id: int) -> None:
     
     # Return None for 204 No Content
     return None
+
+
+@router.get("/roots/summary", response_model=List[SkillSummary])
+def get_roots_summary() -> List[SkillSummary]:
+    """
+    Get aggregated summaries for all root skills.
+    
+    This endpoint provides a comprehensive overview of all skill trees by returning
+    summary data for each root skill (skills with no parent). Each summary includes:
+    - Skill basic information (id, name, parent_id)
+    - Aggregated counter totals across the entire tree
+    - Descendant counts and recursive children summaries
+    
+    Returns:
+        List of SkillSummary objects, one for each root skill
+        
+    Example use cases:
+        - Dashboard overview of all skill trees
+        - Comparing progress across different skill domains
+        - Total effort tracking across all skills
+    """
+    # Get all root skills (parent_id is None)
+    root_skills = [skill for skill in skills_db.values() if skill.parent_id is None]
+    
+    # Get summary for each root skill
+    root_summaries = [get_skill_summary(root.id) for root in root_skills]
+    
+    return root_summaries
 
 
 @router.get("/{skill_id}/summary", response_model=SkillSummary)

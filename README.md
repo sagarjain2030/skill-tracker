@@ -74,8 +74,12 @@ Frontend runs on: http://localhost:3000
 - **Feature-3.1** ✅ Counter model definition
 - **Feature-3.2** ✅ Counter CRUD API
 - **Story-5.1.1** ✅ Skill summary endpoint
+- **Story-5.2.1** ✅ Root skill aggregation
+- **Feature-8** ✅ Bulk import/export operations
 
 #### API Endpoints:
+
+**Skills Management:**
 - `POST /api/skills/` - Create root skill
 - `POST /api/skills/{parent_id}/children` - Create subskill
 - `GET /api/skills/` - List all skills
@@ -83,8 +87,16 @@ Frontend runs on: http://localhost:3000
 - `GET /api/skills/tree` - Get full skill tree with nested children
 - `GET /api/skills/{id}/tree` - Get skill subtree with nested children
 - `GET /api/skills/{id}/summary` - Get skill summary with aggregated counters and descendants
+- `GET /api/skills/roots/summary` - Get aggregated summaries for all root skills
 - `PATCH /api/skills/{id}` - Update skill (name, parent_id)
 - `DELETE /api/skills/{id}` - Delete skill and entire subtree
+
+**Bulk Operations:**
+- `POST /api/skills/import` - Import skill tree(s) from JSON (appends to existing)
+- `GET /api/skills/export` - Export all skill trees as JSON
+- `PUT /api/skills/import` - Replace all skills with imported tree(s) (clears existing)
+
+**Counters:**
 - `POST /api/counters/?skill_id={id}` - Create counter for a skill
 - `GET /api/counters/` - List all counters (optional filter by skill_id)
 - `GET /api/counters/{id}` - Get counter by ID
@@ -101,6 +113,7 @@ Frontend runs on: http://localhost:3000
 - ✅ Expand/collapse tree nodes
 - ✅ Counter management (create, increment, delete)
 - ✅ Accumulated counter display (aggregates from children)
+- ✅ Import/Export support (API ready, UI pending)
 - ✅ Beautiful gradient UI
 
 ### 🚧 Upcoming Milestones
@@ -115,7 +128,50 @@ Frontend runs on: http://localhost:3000
 pytest tests/ -v
 ```
 
-All 182 tests passing ✅
+All 241 tests passing ✅
+
+### Example Import/Export JSON Format
+
+**Export Format:**
+```json
+[
+  {
+    "id": 1,
+    "name": "Programming",
+    "children": [
+      {
+        "id": 2,
+        "name": "Python",
+        "children": []
+      },
+      {
+        "id": 3,
+        "name": "JavaScript",
+        "children": []
+      }
+    ]
+  }
+]
+```
+
+**Import Format** (IDs auto-assigned):
+```json
+[
+  {
+    "name": "Programming",
+    "children": [
+      {
+        "name": "Python",
+        "children": []
+      },
+      {
+        "name": "JavaScript",
+        "children": []
+      }
+    ]
+  }
+]
+```
 
 ## Development
 
