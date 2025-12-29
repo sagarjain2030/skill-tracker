@@ -49,6 +49,12 @@ const skillService = {
   getSkillSummary: async (id) => {
     const response = await axios.get(`${API_BASE_URL}/skills/${id}/summary`);
     return response.data;
+  },
+
+  // Get aggregated summaries for all root skills
+  getRootSummaries: async () => {
+    const response = await axios.get(`${API_BASE_URL}/skills/roots/summary`);
+    return response.data;
   }
 };
 

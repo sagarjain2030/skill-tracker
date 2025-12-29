@@ -382,6 +382,34 @@ def delete_skill(skill_id: int) -> None:
     return None
 
 
+@router.get("/roots/summary", response_model=List[SkillSummary])
+def get_roots_summary() -> List[SkillSummary]:
+    """
+    Get aggregated summaries for all root skills.
+    
+    This endpoint provides a comprehensive overview of all skill trees by returning
+    summary data for each root skill (skills with no parent). Each summary includes:
+    - Skill basic information (id, name, parent_id)
+    - Aggregated counter totals across the entire tree
+    - Descendant counts and recursive children summaries
+    
+    Returns:
+        List of SkillSummary objects, one for each root skill
+        
+    Example use cases:
+        - Dashboard overview of all skill trees
+        - Comparing progress across different skill domains
+        - Total effort tracking across all skills
+    """
+    # Get all root skills (parent_id is None)
+    root_skills = [skill for skill in skills_db.values() if skill.parent_id is None]
+    
+    # Get summary for each root skill
+    root_summaries = [get_skill_summary(root.id) for root in root_skills]
+    
+    return root_summaries
+
+
 @router.get("/{skill_id}/summary", response_model=SkillSummary)
 def get_skill_summary(skill_id: int) -> SkillSummary:
     """

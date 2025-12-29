@@ -74,6 +74,7 @@ Frontend runs on: http://localhost:3000
 - **Feature-3.1** ✅ Counter model definition
 - **Feature-3.2** ✅ Counter CRUD API
 - **Story-5.1.1** ✅ Skill summary endpoint
+- **Story-5.2.1** ✅ Root skill aggregation
 
 #### API Endpoints:
 - `POST /api/skills/` - Create root skill
@@ -83,6 +84,7 @@ Frontend runs on: http://localhost:3000
 - `GET /api/skills/tree` - Get full skill tree with nested children
 - `GET /api/skills/{id}/tree` - Get skill subtree with nested children
 - `GET /api/skills/{id}/summary` - Get skill summary with aggregated counters and descendants
+- `GET /api/skills/roots/summary` - Get aggregated summaries for all root skills
 - `PATCH /api/skills/{id}` - Update skill (name, parent_id)
 - `DELETE /api/skills/{id}` - Delete skill and entire subtree
 - `POST /api/counters/?skill_id={id}` - Create counter for a skill
@@ -115,7 +117,7 @@ Frontend runs on: http://localhost:3000
 pytest tests/ -v
 ```
 
-All 182 tests passing ✅
+All 191 tests passing ✅
 
 ## Development
 
