@@ -113,7 +113,7 @@ Frontend runs on: http://localhost:3000
 - ✅ Expand/collapse tree nodes
 - ✅ Counter management (create, increment, delete)
 - ✅ Accumulated counter display (aggregates from children)
-- ✅ Import/Export support (API ready, UI pending)
+- ✅ **Import/Export UI** (backup, restore, share skill trees)
 - ✅ Beautiful gradient UI
 
 ### 🚧 Upcoming Milestones
