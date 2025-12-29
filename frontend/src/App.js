@@ -3,6 +3,7 @@ import skillService, { counterService } from './services/api';
 import SkillTree from './components/SkillTree';
 import AddSkillForm from './components/AddSkillForm';
 import SkillSummary from './components/SkillSummary';
+import ImportExport from './components/ImportExport';
 import './App.css';
 
 function App() {
@@ -199,6 +200,7 @@ function App() {
         <div className="content-container">
           <div className="sidebar">
             <AddSkillForm onAddSkill={handleAddRootSkill} />
+            <ImportExport onImport={loadData} />
           </div>
 
           <div className="main-content">
