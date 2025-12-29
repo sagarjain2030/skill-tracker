@@ -2,7 +2,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
-from app.routers import skills
+from app.routers import skills, counters
 from app.storage import clear_all_data
 
 client = TestClient(app)
@@ -13,11 +13,15 @@ def reset_database():
     """Reset database before each test."""
     clear_all_data()
     skills.skills_db.clear()
+    counters.counters_db.clear()
     skills.next_skill_id = 1
+    counters.next_counter_id = 1
     yield
     clear_all_data()
     skills.skills_db.clear()
+    counters.counters_db.clear()
     skills.next_skill_id = 1
+    counters.next_counter_id = 1
 
 
 class TestImportSkillTree:
@@ -579,3 +583,250 @@ class TestImportExportRoundTrip:
             if not compare_nodes(t1, t2):
                 return False
         return True
+
+
+class TestImportExportWithCounters:
+    """Tests for counter preservation in import/export."""
+
+    def test_import_skill_with_counters(self):
+        """Test importing a skill with counters."""
+        import_data = [
+            {
+                "name": "Python Course",
+                "counters": [
+                    {"name": "Videos", "value": 0, "target": 50, "unit": None},
+                    {"name": "Duration", "value": 0, "target": 120, "unit": "Mins"}
+                ],
+                "children": []
+            }
+        ]
+        
+        response = client.post("/api/skills/import", json=import_data)
+        
+        assert response.status_code == 201
+        result = response.json()
+        assert len(result) == 1
+        
+        # Check counters are in response
+        assert len(result[0]["counters"]) == 2
+        assert result[0]["counters"][0]["name"] == "Videos"
+        assert result[0]["counters"][0]["value"] == 0
+        assert result[0]["counters"][0]["target"] == 50
+        assert result[0]["counters"][0]["unit"] is None
+        
+        assert result[0]["counters"][1]["name"] == "Duration"
+        assert result[0]["counters"][1]["value"] == 0
+        assert result[0]["counters"][1]["target"] == 120
+        assert result[0]["counters"][1]["unit"] == "Mins"
+        
+        # Verify counters created in database
+        skill_id = result[0]["id"]
+        counters_response = client.get(f"/api/counters/?skill_id={skill_id}")
+        counters = counters_response.json()
+        assert len(counters) == 2
+
+    def test_export_skill_with_counters(self):
+        """Test exporting a skill with counters."""
+        # Create skill
+        skill = client.post("/api/skills/", json={"name": "JavaScript"}).json()
+        skill_id = skill["id"]
+        
+        # Add counters
+        client.post(f"/api/counters/?skill_id={skill_id}", json={
+            "name": "Videos",
+            "value": 10,
+            "target": 25,
+            "unit": None
+        })
+        client.post(f"/api/counters/?skill_id={skill_id}", json={
+            "name": "Hours",
+            "value": 5.5,
+            "target": 15.0,
+            "unit": "hrs"
+        })
+        
+        # Export
+        response = client.get("/api/skills/export")
+        
+        assert response.status_code == 200
+        result = response.json()
+        assert len(result) == 1
+        
+        # Check counters in export
+        assert len(result[0]["counters"]) == 2
+        assert result[0]["counters"][0]["name"] == "Videos"
+        assert result[0]["counters"][0]["value"] == 10
+        assert result[0]["counters"][0]["target"] == 25
+        assert result[0]["counters"][0]["unit"] is None
+        
+        assert result[0]["counters"][1]["name"] == "Hours"
+        assert result[0]["counters"][1]["value"] == 5.5
+        assert result[0]["counters"][1]["target"] == 15.0
+        assert result[0]["counters"][1]["unit"] == "hrs"
+
+    def test_roundtrip_with_counters(self):
+        """Test that counters survive export->import roundtrip."""
+        # Create skill with counters
+        skill = client.post("/api/skills/", json={"name": "AWS Course"}).json()
+        skill_id = skill["id"]
+        
+        client.post(f"/api/counters/?skill_id={skill_id}", json={
+            "name": "Videos",
+            "value": 15,
+            "target": 269,
+            "unit": None
+        })
+        client.post(f"/api/counters/?skill_id={skill_id}", json={
+            "name": "Duration",
+            "value": 50,
+            "target": 785,
+            "unit": "Mins"
+        })
+        
+        # Export
+        exported = client.get("/api/skills/export").json()
+        
+        # Clear database
+        client.put("/api/skills/import", json=[])
+        
+        # Re-import
+        response = client.post("/api/skills/import", json=exported)
+        
+        assert response.status_code == 201
+        result = response.json()
+        
+        # Verify counters preserved
+        assert len(result[0]["counters"]) == 2
+        assert result[0]["counters"][0]["name"] == "Videos"
+        assert result[0]["counters"][0]["value"] == 15
+        assert result[0]["counters"][0]["target"] == 269
+        
+        assert result[0]["counters"][1]["name"] == "Duration"
+        assert result[0]["counters"][1]["value"] == 50
+        assert result[0]["counters"][1]["target"] == 785
+        assert result[0]["counters"][1]["unit"] == "Mins"
+
+    def test_import_nested_tree_with_counters(self):
+        """Test importing nested tree where multiple nodes have counters."""
+        import_data = [
+            {
+                "name": "AWS Certification",
+                "counters": [
+                    {"name": "Progress", "value": 30, "target": 100, "unit": "%"}
+                ],
+                "children": [
+                    {
+                        "name": "EC2 Module",
+                        "counters": [
+                            {"name": "Videos", "value": 5, "target": 20, "unit": None},
+                            {"name": "Labs", "value": 2, "target": 5, "unit": None}
+                        ],
+                        "children": []
+                    },
+                    {
+                        "name": "S3 Module",
+                        "counters": [
+                            {"name": "Videos", "value": 8, "target": 15, "unit": None}
+                        ],
+                        "children": []
+                    }
+                ]
+            }
+        ]
+        
+        response = client.post("/api/skills/import", json=import_data)
+        
+        assert response.status_code == 201
+        result = response.json()
+        
+        # Check root counters
+        assert len(result[0]["counters"]) == 1
+        assert result[0]["counters"][0]["name"] == "Progress"
+        
+        # Check first child counters
+        assert len(result[0]["children"][0]["counters"]) == 2
+        assert result[0]["children"][0]["counters"][0]["name"] == "Videos"
+        assert result[0]["children"][0]["counters"][1]["name"] == "Labs"
+        
+        # Check second child counters
+        assert len(result[0]["children"][1]["counters"]) == 1
+        assert result[0]["children"][1]["counters"][0]["name"] == "Videos"
+
+    def test_replace_all_with_counters(self):
+        """Test that replace all (PUT /import) properly handles counters."""
+        # Create initial tree with counters
+        skill1 = client.post("/api/skills/", json={"name": "Old Skill"}).json()
+        client.post(f"/api/counters/?skill_id={skill1['id']}", json={
+            "name": "OldCounter",
+            "value": 100,
+            "target": 200,
+            "unit": None
+        })
+        
+        # Replace with new tree
+        new_data = [
+            {
+                "name": "New Skill",
+                "counters": [
+                    {"name": "NewCounter", "value": 5, "target": 10, "unit": None}
+                ],
+                "children": []
+            }
+        ]
+        
+        response = client.put("/api/skills/import", json=new_data)
+        
+        assert response.status_code == 200
+        result = response.json()
+        
+        # Verify old skill and counter are gone
+        all_skills = client.get("/api/skills/").json()
+        assert len(all_skills) == 1
+        assert all_skills[0]["name"] == "New Skill"
+        
+        # Verify new counter exists
+        assert len(result[0]["counters"]) == 1
+        assert result[0]["counters"][0]["name"] == "NewCounter"
+        assert result[0]["counters"][0]["value"] == 5
+        
+        # Verify old counter doesn't exist
+        new_skill_id = result[0]["id"]
+        counters = client.get(f"/api/counters/?skill_id={new_skill_id}").json()
+        assert len(counters) == 1
+        assert counters[0]["name"] == "NewCounter"
+
+    def test_import_counter_without_target(self):
+        """Test importing a counter without target (optional field)."""
+        import_data = [
+            {
+                "name": "Skill",
+                "counters": [
+                    {"name": "Counter", "value": 10, "target": None, "unit": None}
+                ],
+                "children": []
+            }
+        ]
+        
+        response = client.post("/api/skills/import", json=import_data)
+        
+        assert response.status_code == 201
+        result = response.json()
+        assert result[0]["counters"][0]["target"] is None
+
+    def test_import_counter_without_unit(self):
+        """Test importing a counter without unit (optional field)."""
+        import_data = [
+            {
+                "name": "Skill",
+                "counters": [
+                    {"name": "Count", "value": 5, "target": 10, "unit": None}
+                ],
+                "children": []
+            }
+        ]
+        
+        response = client.post("/api/skills/import", json=import_data)
+        
+        assert response.status_code == 201
+        result = response.json()
+        assert result[0]["counters"][0]["unit"] is None

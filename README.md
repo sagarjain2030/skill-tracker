@@ -128,25 +128,48 @@ Frontend runs on: http://localhost:3000
 pytest tests/ -v
 ```
 
-All 241 tests passing ✅
+All 248 tests passing ✅
 
 ### Example Import/Export JSON Format
 
-**Export Format:**
+**Export Format** (with counters):
 ```json
 [
   {
     "id": 1,
     "name": "Programming",
+    "counters": [
+      {
+        "name": "Progress",
+        "value": 45,
+        "target": 100,
+        "unit": "%"
+      }
+    ],
     "children": [
       {
         "id": 2,
         "name": "Python",
+        "counters": [
+          {
+            "name": "Hours",
+            "value": 120,
+            "target": 200,
+            "unit": "hrs"
+          },
+          {
+            "name": "Projects",
+            "value": 5,
+            "target": 10,
+            "unit": null
+          }
+        ],
         "children": []
       },
       {
         "id": 3,
         "name": "JavaScript",
+        "counters": [],
         "children": []
       }
     ]
@@ -154,24 +177,55 @@ All 241 tests passing ✅
 ]
 ```
 
-**Import Format** (IDs auto-assigned):
+**Import Format** (IDs auto-assigned, counters included):
 ```json
 [
   {
     "name": "Programming",
+    "counters": [
+      {
+        "name": "Progress",
+        "value": 45,
+        "target": 100,
+        "unit": "%"
+      }
+    ],
     "children": [
       {
         "name": "Python",
+        "counters": [
+          {
+            "name": "Hours",
+            "value": 120,
+            "target": 200,
+            "unit": "hrs"
+          },
+          {
+            "name": "Projects",
+            "value": 5,
+            "target": 10,
+            "unit": null
+          }
+        ],
         "children": []
       },
       {
         "name": "JavaScript",
+        "counters": [],
         "children": []
       }
     ]
   }
 ]
 ```
+
+**Counter Fields:**
+- `name` (required): Counter name (e.g., "Videos", "Hours", "Progress")
+- `value` (required): Current value (numeric)
+- `target` (optional): Target value (numeric or null)
+- `unit` (optional): Unit label (string or null, e.g., "hrs", "%", "Mins")
+
+See `example_import.json` for a complete example with nested skills and counters.
 
 ## Development
 
