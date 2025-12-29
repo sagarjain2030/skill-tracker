@@ -1,0 +1,64 @@
+[
+  {
+    "name": "Programming",
+    "children": [
+      {
+        "name": "Backend",
+        "children": [
+          {
+            "name": "Python",
+            "children": [
+              {"name": "FastAPI", "children": []},
+              {"name": "Django", "children": []}
+            ]
+          },
+          {
+            "name": "Node.js",
+            "children": [
+              {"name": "Express", "children": []},
+              {"name": "NestJS", "children": []}
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Frontend",
+        "children": [
+          {
+            "name": "React",
+            "children": [
+              {"name": "Hooks", "children": []},
+              {"name": "Redux", "children": []}
+            ]
+          },
+          {
+            "name": "Vue",
+            "children": [
+              {"name": "Vuex", "children": []},
+              {"name": "Composition API", "children": []}
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Design",
+    "children": [
+      {
+        "name": "UI/UX",
+        "children": [
+          {"name": "Figma", "children": []},
+          {"name": "Adobe XD", "children": []}
+        ]
+      },
+      {
+        "name": "Graphics",
+        "children": [
+          {"name": "Photoshop", "children": []},
+          {"name": "Illustrator", "children": []}
+        ]
+      }
+    ]
+  }
+]

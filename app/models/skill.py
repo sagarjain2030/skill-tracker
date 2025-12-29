@@ -56,5 +56,24 @@ class SkillSummary(Skill):
     model_config = ConfigDict(from_attributes=True)
 
 
+class SkillImportNode(BaseModel):
+    """Schema for importing a skill node with optional children."""
+    name: str = Field(..., min_length=1, max_length=255, description="Skill name")
+    children: List["SkillImportNode"] = Field(default_factory=list, description="Child skills")
+
+
+class SkillExportNode(BaseModel):
+    """Schema for exporting a skill node with ID and optional children."""
+    id: int = Field(..., description="Skill ID")
+    name: str = Field(..., description="Skill name")
+    children: List["SkillExportNode"] = Field(default_factory=list, description="Child skills")
+
+
+# Required for forward reference resolution
+SkillImportNode.model_rebuild()
+SkillExportNode.model_rebuild()
+SkillSummary.model_rebuild()
+
+
 # Required for forward reference resolution
 SkillSummary.model_rebuild()

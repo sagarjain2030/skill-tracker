@@ -55,6 +55,24 @@ const skillService = {
   getRootSummaries: async () => {
     const response = await axios.get(`${API_BASE_URL}/skills/roots/summary`);
     return response.data;
+  },
+
+  // Import skill tree(s) from JSON
+  importSkillTree: async (trees) => {
+    const response = await axios.post(`${API_BASE_URL}/skills/import`, trees);
+    return response.data;
+  },
+
+  // Export all skill trees to JSON
+  exportSkillTree: async () => {
+    const response = await axios.get(`${API_BASE_URL}/skills/export`);
+    return response.data;
+  },
+
+  // Replace all skills with imported tree(s)
+  updateSkillTree: async (trees) => {
+    const response = await axios.put(`${API_BASE_URL}/skills/import`, trees);
+    return response.data;
   }
 };
 
