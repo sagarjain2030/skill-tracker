@@ -2,8 +2,8 @@ __pycache__/
 *.pyc
 .venv/
 
-# Persistent data storage
-data/
+# Data files are now committed to preserve state
+# Use Export/Import features around deploys
 
 # Frontend build
 frontend/build/

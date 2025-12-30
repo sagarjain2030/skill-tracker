@@ -6,7 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 from pathlib import Path
 from app.routers import skills, counters
-from app.storage import clear_all_data
+from app.storage_db import clear_all_data
+from app.database import init_db
 
 app = FastAPI(
     title="Skill Tracker API",
@@ -36,6 +37,9 @@ app = FastAPI(
         "name": "MIT",
     },
 )
+
+# Initialize database tables
+init_db()
 
 # Configure CORS
 allowed_origins = [
@@ -83,6 +87,26 @@ def root():
 def health_check():
     """Health check endpoint."""
     return {"status": "ok"}
+
+@app.get("/debug/storage", tags=["System"])
+def debug_storage_info():
+    """Debug endpoint to check storage paths and disk status."""
+    import os
+    from pathlib import Path
+    
+    data_dir = Path("data")
+    skills_file = data_dir / "skills.json"
+    counters_file = data_dir / "counters.json"
+    
+    return {
+        "data_directory": str(data_dir.absolute()),
+        "data_dir_exists": data_dir.exists(),
+        "skills_file_exists": skills_file.exists(),
+        "counters_file_exists": counters_file.exists(),
+        "current_working_dir": os.getcwd(),
+        "render_disk_mounted": os.path.exists("/opt/render/project/src/data"),
+        "disk_contents": list(data_dir.iterdir()) if data_dir.exists() else []
+    }
 
 @app.api_route("/version", methods=["GET", "HEAD"], tags=["System"])
 def version():
