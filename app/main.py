@@ -85,8 +85,25 @@ def root():
 
 @app.get("/health", tags=["System"])
 def health_check():
-    """Health check endpoint."""
-    return {"status": "ok"}
+    """Health check endpoint with database connectivity check."""
+    from app.database import SessionLocal, SkillDB
+    
+    try:
+        # Test database connection
+        db = SessionLocal()
+        db.query(SkillDB).first()
+        db.close()
+        
+        return {
+            "status": "ok",
+            "database": "connected"
+        }
+    except Exception as e:
+        return {
+            "status": "degraded",
+            "database": "disconnected",
+            "error": str(e)
+        }
 
 @app.get("/debug/storage", tags=["System"])
 def debug_storage_info():
