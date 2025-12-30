@@ -23,6 +23,10 @@ function App() {
     try {
       setLoading(true);
       setError(null);
+      
+      // Wait for backend to be ready (especially on Render cold starts)
+      await waitForBackend();
+      
       const [skillsData, countersData] = await Promise.all([
         skillService.getAllSkills(),
         counterService.getAllCounters()
@@ -35,6 +39,24 @@ function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const waitForBackend = async (maxRetries = 10, delay = 1000) => {
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const response = await fetch('/health');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.database === 'connected') {
+            return; // Backend is ready
+          }
+        }
+      } catch (err) {
+        console.log(`Backend not ready, retrying... (${i + 1}/${maxRetries})`);
+      }
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    throw new Error('Backend did not become ready in time');
   };
 
   const handleAddRootSkill = async (name) => {

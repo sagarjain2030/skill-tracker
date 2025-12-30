@@ -16,7 +16,11 @@ def test_health_check():
     """Test health check endpoint."""
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    
+    data = response.json()
+    assert data["status"] == "ok"
+    assert "database" in data
+    assert data["database"] in ["connected", "disconnected"]
 
 
 def test_favicon():
