@@ -298,8 +298,8 @@ function SkillNode({
             </div>
           )}
 
-          {/* Show accumulated counters (includes own + children) */}
-          {skill.accumulatedCounters && skill.accumulatedCounters.length > 0 && (
+          {/* Show accumulated counters only if skill has children */}
+          {hasChildren && skill.accumulatedCounters && skill.accumulatedCounters.length > 0 && (
             <div className="counters-list">
               <h5>📈 Total (this skill + all children):</h5>
               {skill.accumulatedCounters.map((counter, idx) => (
@@ -332,10 +332,10 @@ function SkillNode({
             </p>
           )}
 
-          {/* Show direct counters (only this skill) */}
+          {/* Show direct counters (only this skill) - with conditional label */}
           {skill.counters && skill.counters.length > 0 && (
-            <div className="counters-list" style={{marginTop: '1rem'}}>
-              <h5>🎯 Direct (this skill only):</h5>
+            <div className="counters-list" style={{marginTop: hasChildren ? '1rem' : '0'}}>
+              {hasChildren && <h5>🎯 Direct (this skill only):</h5>}
               {skill.counters.map(counter => (
                 <div key={counter.id} className="counter-item">
                   <div className="counter-info">
