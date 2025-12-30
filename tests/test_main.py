@@ -35,6 +35,27 @@ def test_version():
     assert "version" in data
 
 
+def test_version_head_request():
+    """Test version endpoint supports HEAD requests."""
+    response = client.head("/version")
+    assert response.status_code == 200
+
+
+def test_debug_storage_info():
+    """Test debug storage endpoint returns storage information."""
+    response = client.get("/debug/storage")
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert "data_directory" in data
+    assert "data_dir_exists" in data
+    assert "skills_file_exists" in data
+    assert "counters_file_exists" in data
+    assert "current_working_dir" in data
+    assert "render_disk_mounted" in data
+    assert "disk_contents" in data
+
+
 class TestClearAllData:
     """Tests for DELETE /api/data endpoint."""
 

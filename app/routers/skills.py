@@ -7,11 +7,11 @@ from app.models.skill import (
 )
 from app.models.counter import Counter
 from app.utils.validation import validate_no_cycle, get_descendants, CyclicDependencyError
-from app.storage import load_skills, save_skills, get_next_skill_id
+from app.storage_db import load_skills, save_skills, get_next_skill_id
 
 router = APIRouter(prefix="/skills", tags=["Skills"])
 
-# Load skills from persistent storage
+# Load skills from database
 skills_db: Dict[int, Skill] = load_skills()
 next_skill_id = get_next_skill_id(skills_db)
 

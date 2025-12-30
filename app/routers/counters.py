@@ -2,11 +2,11 @@
 from typing import Dict, List
 from fastapi import APIRouter, HTTPException, status
 from app.models.counter import Counter, CounterCreate, CounterUpdate
-from app.storage import load_counters, save_counters, get_next_counter_id
+from app.storage_db import load_counters, save_counters, get_next_counter_id
 
 router = APIRouter(prefix="/counters", tags=["Counters"])
 
-# Load counters from persistent storage
+# Load counters from database
 counters_db: Dict[int, Counter] = load_counters()
 next_counter_id = get_next_counter_id(counters_db)
 
