@@ -618,6 +618,11 @@ def get_skill_summary(skill_id: int) -> SkillSummary:
     skill_parent_map = {sid: s.parent_id for sid, s in skills_db.items()}
     descendants = get_descendants(skill_id, skill_parent_map)
     
+    # Debug logging
+    print(f"\n=== DEBUG get_skill_summary for skill_id={skill_id} ({skill.name}) ===")
+    print(f"Descendants: {descendants}")
+    print(f"Skill parent map: {skill_parent_map}")
+    
     # Get direct children
     direct_children = [s for s in skills_db.values() if s.parent_id == skill_id]
     
@@ -627,9 +632,13 @@ def get_skill_summary(skill_id: int) -> SkillSummary:
     # Include this skill and all descendants
     skill_ids_to_aggregate = {skill_id} | descendants
     
+    print(f"Skill IDs to aggregate: {skill_ids_to_aggregate}")
+    
     for sid in skill_ids_to_aggregate:
         skill_counters = [c for c in counters_db.values() if c.skill_id == sid]
+        print(f"  Skill {sid}: {len(skill_counters)} counters")
         for counter in skill_counters:
+            print(f"    - {counter.name} ({counter.unit}): value={counter.value}, target={counter.target}")
             key = (counter.name, counter.unit or "")
             if key not in counter_aggregation:
                 counter_aggregation[key] = {"total": 0.0, "count": 0, "target": 0.0}
@@ -638,6 +647,9 @@ def get_skill_summary(skill_id: int) -> SkillSummary:
             # Aggregate targets - sum up all target values
             if counter.target is not None:
                 counter_aggregation[key]["target"] += counter.target
+    
+    print(f"\nFinal aggregation: {counter_aggregation}")
+    print("=== END DEBUG ===\n")
     
     # Build counter summaries
     counter_totals = [
