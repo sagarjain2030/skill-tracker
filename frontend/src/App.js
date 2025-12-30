@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import skillService, { counterService } from './services/api';
 import SkillTree from './components/SkillTree';
 import AddSkillForm from './components/AddSkillForm';
@@ -14,12 +14,25 @@ function App() {
   const [selectedSkillId, setSelectedSkillId] = useState(null);
   const [showSummary, setShowSummary] = useState(false);
 
-  // Load skills and counters on mount
-  useEffect(() => {
-    loadData();
-  }, []);
+  const waitForBackend = async (maxRetries = 10, delay = 1000) => {
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const response = await fetch('/health');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.database === 'connected') {
+            return; // Backend is ready
+          }
+        }
+      } catch (err) {
+        console.log(`Backend not ready, retrying... (${i + 1}/${maxRetries})`);
+      }
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    throw new Error('Backend did not become ready in time');
+  };
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -39,25 +52,12 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const waitForBackend = async (maxRetries = 10, delay = 1000) => {
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        const response = await fetch('/health');
-        if (response.ok) {
-          const data = await response.json();
-          if (data.database === 'connected') {
-            return; // Backend is ready
-          }
-        }
-      } catch (err) {
-        console.log(`Backend not ready, retrying... (${i + 1}/${maxRetries})`);
-      }
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-    throw new Error('Backend did not become ready in time');
-  };
+  // Load skills and counters on mount
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleAddRootSkill = async (name) => {
     try {
