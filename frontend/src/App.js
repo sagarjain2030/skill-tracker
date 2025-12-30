@@ -138,11 +138,15 @@ function App() {
             name: counter.name,
             unit: counter.unit,
             value: 0,
-            target: counter.target,
+            target: 0,
             ids: []
           };
         }
         accumulated[key].value += counter.value;
+        // Add target if it exists
+        if (counter.target !== null && counter.target !== undefined) {
+          accumulated[key].target += counter.target;
+        }
         accumulated[key].ids.push(counter.id);
       });
 
@@ -155,11 +159,15 @@ function App() {
               name: data.name,
               unit: data.unit,
               value: 0,
-              target: data.target,
+              target: 0,
               ids: []
             };
           }
           accumulated[key].value += data.value;
+          // Sum up target values from all children
+          if (data.target !== null && data.target !== undefined) {
+            accumulated[key].target = (accumulated[key].target || 0) + data.target;
+          }
           accumulated[key].ids.push(...data.ids);
         });
       });
