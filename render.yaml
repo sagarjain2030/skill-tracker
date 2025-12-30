@@ -9,3 +9,8 @@ services:
         value: production
       - key: PYTHON_VERSION
         value: 3.11.3
+    # Persistent disk to preserve data across deploys
+    disk:
+      name: skill-tracker-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
