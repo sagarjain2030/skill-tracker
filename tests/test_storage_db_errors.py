@@ -8,7 +8,7 @@ from app.models.skill import Skill
 from app.models.counter import Counter
 from app.storage_db import (
     save_skills, save_counters, clear_all_data,
-    get_next_skill_id, get_next_counter_id, load_skills, load_counters
+    get_next_skill_id, get_next_counter_id
 )
 
 

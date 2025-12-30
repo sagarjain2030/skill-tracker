@@ -1,5 +1,5 @@
 """Storage layer that works with both PostgreSQL and in-memory fallback."""
-from typing import Dict, Optional
+from typing import Dict
 from sqlalchemy.orm import Session
 from app.database import SessionLocal, SkillDB, CounterDB, init_db
 from app.models.skill import Skill
